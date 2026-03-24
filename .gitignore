@@ -1,0 +1,30 @@
+# Flutter
+biobiz_mobile/build/
+biobiz_mobile/.dart_tool/
+biobiz_mobile/.packages
+biobiz_mobile/.flutter-plugins
+biobiz_mobile/.flutter-plugins-dependencies
+biobiz_mobile/android/.gradle/
+biobiz_mobile/android/app/build/
+
+# Next.js
+biobiz_web/.next/
+biobiz_web/node_modules/
+biobiz_web/out/
+
+# APK in web public (too large for git)
+biobiz_web/public/biobiz.apk
+
+# Environment
+.env
+.env.local
+*.env
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db

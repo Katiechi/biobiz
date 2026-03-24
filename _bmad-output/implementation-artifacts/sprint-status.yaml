@@ -1,0 +1,132 @@
+# generated: 2026-03-12
+# project: biobiz
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: _bmad-output/implementation-artifacts
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - SM typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+
+generated: 2026-03-12
+project: biobiz
+project_key: NOKEY
+tracking_system: file-system
+story_location: _bmad-output/implementation-artifacts
+
+development_status:
+  # Epic 1: Project Foundation & User Authentication
+  epic-1: in-progress
+  1-1-project-scaffolding-supabase-setup: backlog
+  1-2-user-registration-with-email-password: backlog
+  1-3-email-otp-verification: backlog
+  1-4-user-login-with-email-password: backlog
+  1-5-oauth-sign-in-google-microsoft-apple: backlog
+  1-6-session-management-token-refresh: backlog
+  1-7-account-linking-oauth-password-merge: backlog
+  1-8-account-management-change-email-password-delete: backlog
+  epic-1-retrospective: optional
+
+  # Epic 2: Onboarding & First Card Creation
+  epic-2: backlog
+  2-1-onboarding-wizard-scaffold-name-entry: backlog
+  2-2-contact-information-professional-details-entry: backlog
+  2-3-company-logo-auto-detection-profile-picture: backlog
+  2-4-account-creation-during-onboarding: backlog
+  2-5-card-preview-first-card-generation: backlog
+  epic-2-retrospective: optional
+
+  # Epic 3: Card Editor & Customization
+  epic-3: backlog
+  3-1-card-editor-screen-color-customization: backlog
+  3-2-image-management-logo-profile-picture-cover-photo: backlog
+  3-3-personal-details-editing: backlog
+  3-4-contact-fields-management: backlog
+  3-5-social-links-grid-management: backlog
+  3-6-qr-code-generation-premium-options: backlog
+  3-7-card-save-cancel-unsaved-changes: backlog
+  3-8-multiple-cards-card-management: backlog
+  epic-3-retrospective: optional
+
+  # Epic 4: Card Viewing, Navigation & Web Landing Page
+  epic-4: backlog
+  4-1-in-app-card-renderer-my-card-screen: backlog
+  4-2-bottom-tab-navigation-app-shell: backlog
+  4-3-side-menu-hamburger-settings-navigation: backlog
+  4-4-web-card-viewer-public-landing-page: backlog
+  epic-4-retrospective: optional
+
+  # Epic 5: Card Sharing & QR Distribution
+  epic-5: backlog
+  5-1-full-screen-qr-code-display-share-screen: backlog
+  5-2-copy-link-basic-sharing-channels: backlog
+  5-3-social-platform-sharing-whatsapp-linkedin-facebook: backlog
+  5-4-qr-code-image-save-share: backlog
+  5-5-google-wallet-apple-wallet-integration: backlog
+  epic-5-retrospective: optional
+
+  # Epic 6: Contact Scanning & Import
+  epic-6: backlog
+  6-1-camera-scanner-qr-code-scanning: backlog
+  6-2-smart-capture-paper-card-ocr-scanning: backlog
+  6-3-photo-library-import-manual-entry: backlog
+  epic-6-retrospective: optional
+
+  # Epic 7: Contacts Management & Location Tagging
+  epic-7: backlog
+  7-1-contacts-list-search: backlog
+  7-2-contact-detail-view-notes-meeting-history: backlog
+  7-3-mutual-exchange-auto-populated-contacts: backlog
+  7-4-manual-contact-creation-export: backlog
+  7-5-push-notifications-for-new-contacts: backlog
+  epic-7-retrospective: optional
+
+  # Epic 8: Premium Subscriptions & Monetization
+  epic-8: backlog
+  8-1-premium-feature-gates-upgrade-prompts: backlog
+  8-2-subscription-purchase-flow-pricing: backlog
+  8-3-subscription-management-downgrade-grace-period: backlog
+  epic-8-retrospective: optional
+
+  # Epic 9: AI Notetaker & Meeting Summaries
+  epic-9: backlog
+  9-1-meeting-recording-consent: backlog
+  9-2-ai-transcription-summary-generation: backlog
+  9-3-recording-management-linking-privacy: backlog
+  epic-9-retrospective: optional
+
+  # Epic 10: Advanced Features & Platform Extensions
+  epic-10: backlog
+  10-1-home-screen-qr-code-widget-android-ios: backlog
+  10-2-nfc-tag-pairing-tap-to-share: backlog
+  10-3-email-signature-generator: backlog
+  10-4-content-moderation-security: backlog
+  10-5-additional-discover-features-virtual-background-lead-capture-referrals: backlog
+  10-6-crm-integration-team-management-future: backlog
+  10-7-smartwatch-companion-app: backlog
+  epic-10-retrospective: optional
