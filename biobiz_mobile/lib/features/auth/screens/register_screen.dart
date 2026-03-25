@@ -76,14 +76,21 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   }
 
   void _showDocument(String title, String assetPath) async {
-    final html = await rootBundle.loadString(assetPath);
-    // Strip HTML tags for plain text display
-    final text = html
-        .replaceAll(RegExp(r'<style>.*?</style>', dotAll: true), '')
-        .replaceAll(RegExp(r'<[^>]*>'), '\n')
-        .replaceAll(RegExp(r'\n{3,}'), '\n\n')
-        .trim();
-    if (!mounted) return;
+    try {
+      final html = await rootBundle.loadString(assetPath);
+      // Strip HTML tags for plain text display
+      final text = html
+          .replaceAll(RegExp(r'<style>.*?</style>', dotAll: true), '')
+          .replaceAll(RegExp(r'<[^>]*>'), '\n')
+          .replaceAll(RegExp(r'\n{3,}'), '\n\n')
+          .trim();
+      if (!mounted) return;
+      if (text.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Document is empty')),
+        );
+        return;
+      }
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -133,6 +140,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         ),
       ),
     );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not load document: $e')),
+        );
+      }
+    }
   }
 
   String _parseAuthError(String error) {
@@ -267,46 +281,42 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
                 // Terms checkbox
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Checkbox(
                       value: _acceptedTerms,
                       onChanged: (v) => setState(() => _acceptedTerms = v ?? false),
                     ),
                     Expanded(
-                      child: Text.rich(
-                        TextSpan(
-                          text: 'I agree to the ',
-                          children: [
-                            WidgetSpan(
-                              child: GestureDetector(
-                                onTap: () => _showDocument('Privacy Policy', 'assets/privacy_policy.html'),
-                                child: Text(
-                                  'Privacy Policy',
-                                  style: TextStyle(
-                                    color: Theme.of(context).colorScheme.primary,
-                                    decoration: TextDecoration.underline,
-                                    fontSize: 12,
-                                  ),
-                                ),
+                      child: Wrap(
+                        children: [
+                          Text('I agree to the ',
+                              style: Theme.of(context).textTheme.bodySmall),
+                          InkWell(
+                            onTap: () => _showDocument('Privacy Policy', 'assets/privacy_policy.html'),
+                            child: Text(
+                              'Privacy Policy',
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.primary,
+                                decoration: TextDecoration.underline,
+                                fontSize: 12,
                               ),
                             ),
-                            const TextSpan(text: ' & '),
-                            WidgetSpan(
-                              child: GestureDetector(
-                                onTap: () => _showDocument('Terms of Service', 'assets/terms_of_service.html'),
-                                child: Text(
-                                  'Terms of Service',
-                                  style: TextStyle(
-                                    color: Theme.of(context).colorScheme.primary,
-                                    decoration: TextDecoration.underline,
-                                    fontSize: 12,
-                                  ),
-                                ),
+                          ),
+                          Text(' & ',
+                              style: Theme.of(context).textTheme.bodySmall),
+                          InkWell(
+                            onTap: () => _showDocument('Terms of Service', 'assets/terms_of_service.html'),
+                            child: Text(
+                              'Terms of Service',
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.primary,
+                                decoration: TextDecoration.underline,
+                                fontSize: 12,
                               ),
                             ),
-                          ],
-                        ),
-                        style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
                       ),
                     ),
                   ],
