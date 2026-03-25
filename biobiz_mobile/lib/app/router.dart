@@ -24,6 +24,7 @@ import '../features/card_view/screens/my_card_screen.dart';
 import '../features/scanner/screens/scan_screen.dart';
 import '../features/ai_notetaker/screens/notetaker_screen.dart';
 import '../features/contacts/screens/contacts_list_screen.dart';
+import '../features/contacts/screens/save_card_screen.dart';
 import '../features/card_editor/screens/card_editor_screen.dart';
 import '../features/sharing/screens/share_card_screen.dart';
 import '../features/settings/screens/menu_screen.dart';
@@ -45,6 +46,17 @@ class AppRouter {
         final isLoggedIn = session != null;
         final isGuest = GuestModeService().isGuest;
         final loc = state.matchedLocation;
+        final uri = state.uri;
+
+        // Handle deep links: biobiz.app/card/SLUG or io.supabase.biobiz://card/SLUG
+        final fullPath = uri.toString();
+        final cardPattern = RegExp(r'(?:biobiz\.app|io\.supabase\.biobiz:)/card/([^/?#]+)');
+        final cardMatch = cardPattern.firstMatch(fullPath);
+        if (cardMatch != null) {
+          final slug = cardMatch.group(1)!;
+          debugPrint('ROUTER: Deep link card slug=$slug');
+          return '/card/view/$slug';
+        }
 
         // These routes are always accessible regardless of auth state
         final publicRoutes = [
@@ -76,6 +88,11 @@ class AppRouter {
             return '/card';
           }
           if (isGuest) return '/onboarding/card-preview';
+        }
+
+        // Allow shared card deep links without auth
+        if (loc.startsWith('/card/view/')) {
+          return null;
         }
 
         // If not logged in, not a guest, and trying to access a protected route
@@ -241,6 +258,15 @@ class AppRouter {
         path: '/card/share',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const ShareCardScreen(),
+      ),
+      // Deep link: open a shared card by slug
+      GoRoute(
+        path: '/card/view/:slug',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final slug = state.pathParameters['slug'] ?? '';
+          return SaveCardScreen(slug: slug);
+        },
       ),
       GoRoute(
         path: '/menu',
