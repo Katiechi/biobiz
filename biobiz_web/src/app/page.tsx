@@ -138,7 +138,7 @@ export default function Home() {
               Download BioBiz now. Free forever, no hidden costs.
             </p>
             <a
-              href="https://github.com/Katiechi/biobiz/releases/latest/download/biobiz-v1.0.0.apk"
+              href="https://github.com/Katiechi/biobiz/releases/latest/download/biobiz-v1.0.1.apk"
               download
               className="inline-block px-8 py-4 bg-white text-[#C62828] rounded-xl font-semibold hover:bg-red-50 transition-colors text-lg"
             >
