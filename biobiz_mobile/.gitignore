@@ -98,3 +98,8 @@ build/
 **/**.xcexportoptions
 **/**.xcinstalllog
 **/**.xccheckout
+
+# Release signing
+android/key.properties
+android/app/biobiz-release.jks
+*.jks
