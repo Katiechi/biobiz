@@ -6,9 +6,8 @@ import 'package:flutter/foundation.dart';
 /// - Groq Whisper API for fast, accurate transcription
 /// - OpenRouter (Gemini) for summarization and extraction
 class AiSummaryService {
-  // Groq API for Whisper transcription
-  static const _groqApiKey =
-      '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';
+  // API keys injected at build time via --dart-define
+  static const _groqApiKey = String.fromEnvironment('GROQ_API_KEY');
   static const _groqTranscriptionUrl =
       'https://api.groq.com/openai/v1/audio/transcriptions';
 

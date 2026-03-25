@@ -103,3 +103,6 @@ build/
 android/key.properties
 android/app/biobiz-release.jks
 *.jks
+
+# Environment secrets
+.env
