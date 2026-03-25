@@ -25,6 +25,7 @@ import '../features/scanner/screens/scan_screen.dart';
 import '../features/ai_notetaker/screens/notetaker_screen.dart';
 import '../features/contacts/screens/contacts_list_screen.dart';
 import '../features/contacts/screens/save_card_screen.dart';
+import '../features/auth/screens/reset_password_screen.dart';
 import '../features/card_editor/screens/card_editor_screen.dart';
 import '../features/sharing/screens/share_card_screen.dart';
 import '../features/settings/screens/menu_screen.dart';
@@ -88,6 +89,7 @@ class AppRouter {
           '/login',
           '/register',
           '/verify-otp',
+          '/reset-password',
           '/onboarding/quick-start',
           '/onboarding/email-start',
           '/onboarding/set-password',
@@ -145,6 +147,10 @@ class AppRouter {
       GoRoute(
         path: '/onboarding/save-guest-card',
         builder: (context, state) => const SaveGuestCardScreen(),
+      ),
+      GoRoute(
+        path: '/reset-password',
+        builder: (context, state) => const ResetPasswordScreen(),
       ),
       GoRoute(
         path: '/login',
