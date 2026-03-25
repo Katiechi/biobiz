@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase-server';
+import { supabase } from '@/lib/supabase';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(
@@ -6,7 +6,6 @@ export async function GET(
   { params }: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await params;
-  const supabase = await createClient();
 
   // Fetch card
   const { data: card } = await supabase

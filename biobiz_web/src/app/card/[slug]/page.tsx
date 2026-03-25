@@ -1,5 +1,5 @@
 // Story 4.4: Public card viewer — SSR page
-import { createClient } from '@/lib/supabase-server';
+import { supabase } from '@/lib/supabase';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 
@@ -9,7 +9,6 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const supabase = await createClient();
   const { data: card } = await supabase
     .from('cards')
     .select('first_name, last_name, job_title, company')
@@ -32,7 +31,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function CardPage({ params }: Props) {
   const { slug } = await params;
-  const supabase = await createClient();
 
   const { data: card } = await supabase
     .from('cards')
