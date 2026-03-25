@@ -200,6 +200,18 @@ class AuthService {
   }
   
   // ─────────────────────────────────────────────
+  // Password Reset
+  // ─────────────────────────────────────────────
+
+  /// Send a password reset email
+  Future<void> sendPasswordReset({required String email}) async {
+    await _supabase.auth.resetPasswordForEmail(
+      email,
+      redirectTo: 'io.supabase.biobiz://login-callback',
+    );
+  }
+
+  // ─────────────────────────────────────────────
   // OAuth Sign-In (NO OTP Required)
   // ─────────────────────────────────────────────
   
