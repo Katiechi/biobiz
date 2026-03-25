@@ -47,15 +47,39 @@ class AppRouter {
         final isGuest = GuestModeService().isGuest;
         final loc = state.matchedLocation;
         final uri = state.uri;
+        final fullUri = uri.toString();
 
-        // Handle deep links: biobiz.app/card/SLUG or io.supabase.biobiz://card/SLUG
-        final fullPath = uri.toString();
-        final cardPattern = RegExp(r'(?:biobiz\.app|io\.supabase\.biobiz:)/card/([^/?#]+)');
-        final cardMatch = cardPattern.firstMatch(fullPath);
-        if (cardMatch != null) {
-          final slug = cardMatch.group(1)!;
-          debugPrint('ROUTER: Deep link card slug=$slug');
-          return '/card/view/$slug';
+        debugPrint('ROUTER: loc=$loc fullUri=$fullUri');
+
+        // Handle deep links: io.supabase.biobiz://card/SLUG
+        // GoRouter may receive this as location "/" with the full URI containing the slug
+        // Or the path might come through as just "/SLUG" with host "card"
+        final deepLinkPatterns = [
+          RegExp(r'io\.supabase\.biobiz://card/([^/?#]+)'),
+          RegExp(r'biobiz\.app/card/([^/?#]+)'),
+        ];
+        for (final pattern in deepLinkPatterns) {
+          final match = pattern.firstMatch(fullUri);
+          if (match != null) {
+            final slug = match.group(1)!;
+            debugPrint('ROUTER: Deep link card slug=$slug');
+            return '/card/view/$slug';
+          }
+        }
+
+        // Also catch if GoRouter parsed the deep link as a bare path like /okeino-mn4ifh
+        // from io.supabase.biobiz://card/okeino-mn4ifh (host=card, path=/okeino-mn4ifh)
+        if (loc.startsWith('/') && !loc.contains('/card/') && !loc.startsWith('/onboarding') &&
+            !loc.startsWith('/login') && !loc.startsWith('/register') && !loc.startsWith('/scan') &&
+            !loc.startsWith('/contacts') && !loc.startsWith('/notetaker') && !loc.startsWith('/menu') &&
+            !loc.startsWith('/settings') && !loc.startsWith('/premium') && !loc.startsWith('/verify') &&
+            loc != '/' && loc != '/card') {
+          // This might be a deep link slug that GoRouter couldn't match
+          final possibleSlug = loc.substring(1); // strip leading /
+          if (possibleSlug.isNotEmpty && !possibleSlug.contains('/')) {
+            debugPrint('ROUTER: Possible deep link slug from unmatched path: $possibleSlug');
+            return '/card/view/$possibleSlug';
+          }
         }
 
         // These routes are always accessible regardless of auth state
