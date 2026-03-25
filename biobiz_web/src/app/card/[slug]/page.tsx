@@ -181,7 +181,7 @@ export default async function CardPage({ params }: Props) {
           </p>
           <div className="flex gap-3">
             <a
-              href="/biobiz.apk"
+              href="https://github.com/Katiechi/biobiz/releases/latest/download/biobiz-v1.0.0.apk"
               download
               className="flex-1 py-2.5 bg-[#C62828] hover:bg-[#AD1F1F] text-white rounded-xl font-semibold transition-colors text-sm text-center"
             >
