@@ -155,18 +155,9 @@ export default async function CardPage({ params }: Props) {
 
           {/* Action Buttons */}
           <div className="mt-6 space-y-3">
-            {/* Open in App — tries deep link, falls back to download */}
+            {/* Open in App — tries deep link */}
             <a
               href={`io.supabase.biobiz://card/${slug}`}
-              onClick={(e) => {
-                // Try to open in app via deep link
-                // If app isn't installed, the link will fail silently
-                // After a short delay, show the page normally
-                const timeout = setTimeout(() => {
-                  // App didn't open — do nothing, user stays on page
-                }, 1500);
-                window.addEventListener('blur', () => clearTimeout(timeout), { once: true });
-              }}
               className="block w-full py-3 bg-[#D4A537] text-gray-900 rounded-xl font-semibold hover:bg-[#E8C96A] transition-colors text-center text-sm"
             >
               Open in BioBiz App
