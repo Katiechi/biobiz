@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../../app/theme.dart';
 import '../../../core/services/guest_mode_service.dart';
 import '../../../core/services/website_scraper_service.dart';
 
@@ -41,7 +43,7 @@ class _OnboardingQuickStartScreenState extends State<OnboardingQuickStartScreen>
 
     final email = _emailController.text.trim();
     final scraper = WebsiteScraperService();
-    
+
     // Extract company from email domain
     String? company;
     final domain = scraper.extractDomainFromEmail(email);
@@ -89,7 +91,8 @@ class _OnboardingQuickStartScreenState extends State<OnboardingQuickStartScreen>
                 Text(
                   'Let\'s create your card',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w800,
+                        fontFamily: GoogleFonts.plusJakartaSans().fontFamily,
                       ),
                 ),
                 const SizedBox(height: 8),
@@ -202,15 +205,29 @@ class _OnboardingQuickStartScreenState extends State<OnboardingQuickStartScreen>
                 const SizedBox(height: 32),
 
                 // Preview button
-                FilledButton(
+                HeritageGradientButton(
                   onPressed: _isLoading ? null : _previewCard,
                   child: _isLoading
                       ? const SizedBox(
                           height: 20,
                           width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                         )
-                      : const Text('See my card'),
+                      : Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.visibility, color: Colors.white),
+                            const SizedBox(width: 8),
+                            Text(
+                              'See my card',
+                              style: GoogleFonts.plusJakartaSans(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
+                        ),
                 ),
                 const SizedBox(height: 16),
               ],

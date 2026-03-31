@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../app/theme.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/guest_mode_service.dart';
 
@@ -38,94 +40,413 @@ class _ManageAccountScreenState extends State<ManageAccountScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
     final user = _supabase.auth.currentUser;
     final email = user?.email ?? '';
     final provider = user?.appMetadata['provider'] as String?;
     final firstName = _profile?['first_name'] ?? '';
     final lastName = _profile?['last_name'] ?? '';
+    final fullName = '$firstName $lastName'.trim();
 
     return Scaffold(
       appBar: AppBar(title: const Text('Manage Account')),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : ListView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
               children: [
-                // Profile header
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(children: [
-                      CircleAvatar(
-                        radius: 32,
-                        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                        child: Text(
-                          firstName.isNotEmpty ? firstName[0].toUpperCase() : '?',
-                          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.onPrimaryContainer),
+                // ── Profile Header Card (Asymmetrical Layout) ──
+                Container(
+                  decoration: BoxDecoration(
+                    color: cs.surfaceContainerLowest,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.08),
+                        blurRadius: 20,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Stack(
+                    children: [
+                      // Heritage decorative accent
+                      Positioned(
+                        top: -40,
+                        right: -40,
+                        child: Container(
+                          width: 120,
+                          height: 120,
+                          decoration: BoxDecoration(
+                            gradient: AppTheme.heritageGradient,
+                            shape: BoxShape.circle,
+                          ),
+                          foregroundDecoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.9),
+                            shape: BoxShape.circle,
+                          ),
                         ),
                       ),
-                      const SizedBox(width: 16),
-                      Expanded(child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('$firstName $lastName'.trim(),
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-                          Text(email, style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Theme.of(context).colorScheme.onSurfaceVariant)),
-                          if (provider != null)
-                            Chip(label: Text('via ${provider.toUpperCase()}'), labelStyle: const TextStyle(fontSize: 10),
-                                padding: EdgeInsets.zero, materialTapTargetSize: MaterialTapTargetSize.shrinkWrap),
-                        ],
-                      )),
-                    ]),
+                      Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Row(
+                          children: [
+                            // Profile avatar with rotation + verification badge
+                            Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                Transform.rotate(
+                                  angle: -0.035,
+                                  child: Container(
+                                    width: 80,
+                                    height: 80,
+                                    decoration: BoxDecoration(
+                                      color: cs.primaryContainer,
+                                      borderRadius: BorderRadius.circular(16),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(alpha: 0.1),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 4),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        firstName.isNotEmpty ? firstName[0].toUpperCase() : '?',
+                                        style: GoogleFonts.plusJakartaSans(
+                                          fontSize: 32,
+                                          fontWeight: FontWeight.w800,
+                                          color: cs.onPrimaryContainer,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                Positioned(
+                                  bottom: -4,
+                                  right: -4,
+                                  child: Container(
+                                    width: 24,
+                                    height: 24,
+                                    decoration: BoxDecoration(
+                                      gradient: AppTheme.heritageGradient,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: cs.surface, width: 2),
+                                    ),
+                                    child: const Icon(Icons.verified, size: 14, color: Colors.white),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(width: 20),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    fullName.isNotEmpty ? fullName : 'Your Name',
+                                    style: tt.headlineMedium,
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    email,
+                                    style: tt.bodyMedium?.copyWith(
+                                      color: cs.onSurfaceVariant,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  if (provider != null) ...[
+                                    const SizedBox(height: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: cs.surfaceContainerHigh,
+                                        borderRadius: BorderRadius.circular(100),
+                                      ),
+                                      child: Text(
+                                        'via ${provider.toUpperCase()}',
+                                        style: tt.labelSmall?.copyWith(
+                                          letterSpacing: 1.2,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 32),
 
-                Card(child: Column(children: [
-                  ListTile(
-                    leading: const Icon(Icons.person_outline),
-                    title: const Text('Edit profile'),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: _editProfile,
+                // ── Profile Section ──
+                _buildSectionHeader('Profile'),
+                const SizedBox(height: 12),
+                Container(
+                  decoration: BoxDecoration(
+                    color: cs.surfaceContainer,
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                ])),
-                const SizedBox(height: 16),
-
-                Card(child: Column(children: [
-                  ListTile(
-                    leading: const Icon(Icons.email_outlined),
-                    title: const Text('Change email'),
-                    subtitle: Text(email),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: _changeEmail,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: _editProfile,
+                      borderRadius: BorderRadius.circular(16),
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: cs.surfaceContainerHighest,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Icon(Icons.person_outline, color: cs.primary),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Edit Profile', style: tt.bodyLarge?.copyWith(fontWeight: FontWeight.w600)),
+                                  Text('Update your personal information', style: tt.bodySmall),
+                                ],
+                              ),
+                            ),
+                            Icon(Icons.chevron_right, color: cs.outlineVariant),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
-                  const Divider(height: 1),
-                  ListTile(
-                    leading: const Icon(Icons.lock_outline),
-                    title: const Text('Change password'),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: _changePassword,
+                ),
+                const SizedBox(height: 32),
+
+                // ── Security & Identity Section ──
+                _buildSectionHeader('Security & Identity'),
+                const SizedBox(height: 12),
+                Container(
+                  decoration: BoxDecoration(
+                    color: cs.surfaceContainer,
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                ])),
-                const SizedBox(height: 16),
+                  child: Column(
+                    children: [
+                      // Change Email
+                      Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: _changeEmail,
+                          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                          child: Padding(
+                            padding: const EdgeInsets.all(20),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    color: cs.surfaceContainerHighest,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Icon(Icons.alternate_email, color: cs.primary),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text('Email Address', style: tt.bodyLarge?.copyWith(fontWeight: FontWeight.w600)),
+                                      Text(email, style: tt.bodySmall),
+                                    ],
+                                  ),
+                                ),
+                                Icon(Icons.chevron_right, color: cs.outlineVariant),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      // Ghost divider
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Divider(height: 1, color: cs.outlineVariant.withValues(alpha: 0.15)),
+                      ),
+                      // Change Password
+                      Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: _changePassword,
+                          borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
+                          child: Padding(
+                            padding: const EdgeInsets.all(20),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    color: cs.surfaceContainerHighest,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Icon(Icons.lock_open_outlined, color: cs.primary),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text('Security Password', style: tt.bodyLarge?.copyWith(fontWeight: FontWeight.w600)),
+                                      Text('Change your account password', style: tt.bodySmall),
+                                    ],
+                                  ),
+                                ),
+                                Icon(Icons.chevron_right, color: cs.outlineVariant),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 32),
 
-                Card(child: ListTile(
-                  leading: Icon(Icons.logout, color: Theme.of(context).colorScheme.error),
-                  title: Text('Sign out', style: TextStyle(color: Theme.of(context).colorScheme.error)),
-                  onTap: _signOut,
-                )),
-                const SizedBox(height: 16),
+                // ── Danger Zone ──
+                Padding(
+                  padding: const EdgeInsets.only(left: 4, bottom: 12),
+                  child: Text(
+                    'DANGER ZONE',
+                    style: tt.labelSmall?.copyWith(
+                      color: cs.error,
+                      letterSpacing: 1.5,
+                    ),
+                  ),
+                ),
+                Container(
+                  decoration: BoxDecoration(
+                    color: cs.errorContainer.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: cs.error.withValues(alpha: 0.05)),
+                  ),
+                  child: Column(
+                    children: [
+                      // Sign Out
+                      Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: _signOut,
+                          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                          child: Padding(
+                            padding: const EdgeInsets.all(20),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    color: cs.errorContainer.withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Icon(Icons.logout, color: cs.error),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text('Sign Out', style: tt.bodyLarge?.copyWith(
+                                        fontWeight: FontWeight.w600, color: cs.error)),
+                                      Text('Terminate current session', style: tt.bodySmall?.copyWith(
+                                        color: cs.error.withValues(alpha: 0.7))),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      // Ghost divider
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Divider(height: 1, color: cs.error.withValues(alpha: 0.1)),
+                      ),
+                      // Delete Account
+                      Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: _deleteAccount,
+                          borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
+                          child: Padding(
+                            padding: const EdgeInsets.all(20),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    color: cs.errorContainer.withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Icon(Icons.delete_forever, color: cs.error),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text('Delete Account', style: tt.bodyLarge?.copyWith(
+                                        fontWeight: FontWeight.w600, color: cs.error)),
+                                      Text('Permanently remove all data and cards', style: tt.bodySmall?.copyWith(
+                                        color: cs.error.withValues(alpha: 0.7))),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 32),
 
-                Card(child: ListTile(
-                  leading: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
-                  title: Text('Delete account', style: TextStyle(color: Theme.of(context).colorScheme.error)),
-                  subtitle: const Text('Permanently delete all data'),
-                  onTap: _deleteAccount,
-                )),
+                // ── Branding Footer ──
+                Center(
+                  child: Opacity(
+                    opacity: 0.4,
+                    child: Text(
+                      'BIOBIZ DIGITAL ATELIER',
+                      style: tt.labelSmall?.copyWith(letterSpacing: 2.0),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
               ],
             ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4),
+      child: Text(
+        title.toUpperCase(),
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+          letterSpacing: 1.5,
+        ),
+      ),
     );
   }
 
@@ -148,18 +469,22 @@ class _ManageAccountScreenState extends State<ManageAccountScreen> {
           const SizedBox(height: 12),
           TextField(controller: phoneCtrl, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'Phone')),
           const SizedBox(height: 24),
-          FilledButton(onPressed: () async {
-            try {
-              final user = _supabase.auth.currentUser;
-              if (user == null) return;
-              await _supabase.from('profiles').update({
-                'first_name': firstNameCtrl.text.trim(),
-                'last_name': lastNameCtrl.text.trim(),
-                'phone': phoneCtrl.text.trim().isEmpty ? null : phoneCtrl.text.trim(),
-              }).eq('id', user.id);
-              if (mounted) { Navigator.pop(ctx); _loadProfile(); ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile updated!'))); }
-            } catch (e) { ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'))); }
-          }, child: const Text('Save')),
+          HeritageGradientButton(
+            onPressed: () async {
+              try {
+                final user = _supabase.auth.currentUser;
+                if (user == null) return;
+                await _supabase.from('profiles').update({
+                  'first_name': firstNameCtrl.text.trim(),
+                  'last_name': lastNameCtrl.text.trim(),
+                  'phone': phoneCtrl.text.trim().isEmpty ? null : phoneCtrl.text.trim(),
+                }).eq('id', user.id);
+                if (mounted) { Navigator.pop(ctx); _loadProfile(); ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile updated!'))); }
+              } catch (e) { ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'))); }
+            },
+            child: Text('Save', style: GoogleFonts.plusJakartaSans(
+              color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+          ),
           const SizedBox(height: 24),
         ]),
       ),
@@ -180,13 +505,17 @@ class _ManageAccountScreenState extends State<ManageAccountScreen> {
           const SizedBox(height: 16),
           TextField(controller: emailCtrl, keyboardType: TextInputType.emailAddress, decoration: const InputDecoration(labelText: 'New email address')),
           const SizedBox(height: 24),
-          FilledButton(onPressed: () async {
-            if (emailCtrl.text.trim().isEmpty) return;
-            try {
-              await _authService.changeEmail(newEmail: emailCtrl.text.trim());
-              if (mounted) { Navigator.pop(ctx); ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Confirmation email sent!'))); }
-            } catch (e) { ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'))); }
-          }, child: const Text('Send confirmation')),
+          HeritageGradientButton(
+            onPressed: () async {
+              if (emailCtrl.text.trim().isEmpty) return;
+              try {
+                await _authService.changeEmail(newEmail: emailCtrl.text.trim());
+                if (mounted) { Navigator.pop(ctx); ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Confirmation email sent!'))); }
+              } catch (e) { ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'))); }
+            },
+            child: Text('Send confirmation', style: GoogleFonts.plusJakartaSans(
+              color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+          ),
           const SizedBox(height: 24),
         ]),
       ),
@@ -208,20 +537,24 @@ class _ManageAccountScreenState extends State<ManageAccountScreen> {
           const SizedBox(height: 12),
           TextField(controller: confirmCtrl, obscureText: true, decoration: const InputDecoration(labelText: 'Confirm password')),
           const SizedBox(height: 24),
-          FilledButton(onPressed: () async {
-            if (passwordCtrl.text != confirmCtrl.text) {
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Passwords do not match')));
-              return;
-            }
-            if (passwordCtrl.text.length < 6) {
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Password must be at least 6 characters')));
-              return;
-            }
-            try {
-              await _authService.changePassword(newPassword: passwordCtrl.text);
-              if (mounted) { Navigator.pop(ctx); ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Password updated!'))); }
-            } catch (e) { ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'))); }
-          }, child: const Text('Update password')),
+          HeritageGradientButton(
+            onPressed: () async {
+              if (passwordCtrl.text != confirmCtrl.text) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Passwords do not match')));
+                return;
+              }
+              if (passwordCtrl.text.length < 6) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Password must be at least 6 characters')));
+                return;
+              }
+              try {
+                await _authService.changePassword(newPassword: passwordCtrl.text);
+                if (mounted) { Navigator.pop(ctx); ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Password updated!'))); }
+              } catch (e) { ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'))); }
+            },
+            child: Text('Update password', style: GoogleFonts.plusJakartaSans(
+              color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+          ),
           const SizedBox(height: 24),
         ]),
       ),

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../app/theme.dart';
 import '../../card_view/widgets/card_renderer.dart';
 
 /// Story 7.2: Contact detail view with notes, editing, and meeting history
@@ -283,9 +285,15 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      IconButton.filled(
-                        onPressed: _addNote,
-                        icon: const Icon(Icons.send, size: 18),
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: AppTheme.heritageGradient,
+                          shape: BoxShape.circle,
+                        ),
+                        child: IconButton(
+                          onPressed: _addNote,
+                          icon: const Icon(Icons.send, size: 18, color: Colors.white),
+                        ),
                       ),
                     ],
                   ),
@@ -371,7 +379,9 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
           const SizedBox(height: 16),
           Text(name,
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold)),
+                    fontWeight: FontWeight.w800,
+                    fontFamily: GoogleFonts.plusJakartaSans().fontFamily,
+                  )),
           if (jobTitle != null && jobTitle.isNotEmpty)
             Text(jobTitle, style: Theme.of(context).textTheme.bodyLarge),
           if (company != null && company.isNotEmpty)
@@ -384,34 +394,61 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
   }
 
   Widget _buildQuickAction(IconData icon, String label, VoidCallback onTap) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primaryContainer,
-                shape: BoxShape.circle,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerLowest,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
-              child: Icon(icon, color: Theme.of(context).colorScheme.primary),
-            ),
-            const SizedBox(height: 4),
-            Text(label, style: Theme.of(context).textTheme.bodySmall),
-          ],
+            ],
+          ),
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [colorScheme.primary, colorScheme.primaryContainer],
+                  ),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: Colors.white),
+              ),
+              const SizedBox(height: 6),
+              Text(label, style: Theme.of(context).textTheme.bodySmall),
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildInfoTile(IconData icon, String value, String label, VoidCallback onTap) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: ListTile(
-        leading: Icon(icon, color: Theme.of(context).colorScheme.primary),
+        tileColor: colorScheme.surfaceContainerLowest,
+        leading: Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, color: colorScheme.primary, size: 20),
+        ),
         title: Text(value),
         subtitle: Text(label),
         trailing: IconButton(
@@ -426,7 +463,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
         onTap: onTap,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+          side: BorderSide.none,
         ),
       ),
     );
@@ -445,7 +482,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -517,7 +554,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
               const SizedBox(height: 12),
               TextField(controller: websiteCtrl, keyboardType: TextInputType.url, decoration: const InputDecoration(labelText: 'Website')),
               const SizedBox(height: 24),
-              FilledButton(
+              HeritageGradientButton(
                 onPressed: () async {
                   try {
                     await _supabase.from('contacts').update({
@@ -543,7 +580,21 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                     );
                   }
                 },
-                child: const Text('Save'),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.save, color: Colors.white),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Save',
+                      style: GoogleFonts.plusJakartaSans(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 24),
             ],

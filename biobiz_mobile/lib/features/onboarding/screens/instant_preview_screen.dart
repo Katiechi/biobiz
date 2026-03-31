@@ -1,10 +1,15 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import '../../../core/services/guest_mode_service.dart';
 import '../../../core/services/website_scraper_service.dart';
+
+import 'package:biobiz_mobile/app/theme.dart';
 
 /// Instant Card Preview after OAuth sign-in
 /// Shows preview immediately, allows refinement later
@@ -141,6 +146,8 @@ class _OnboardingInstantPreviewScreenState extends ConsumerState<OnboardingInsta
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
     final firstName = _cardData['firstName'] ?? '';
     final lastName = _cardData['lastName'] ?? '';
     final company = _cardData['company'];
@@ -149,147 +156,423 @@ class _OnboardingInstantPreviewScreenState extends ConsumerState<OnboardingInsta
     final profilePicUrl = _cardData['profilePicUrl'];
 
     return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'Your card is ready!',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'We created this from your ${profilePicUrl != null && profilePicUrl.isNotEmpty ? "profile" : "info"}',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                textAlign: TextAlign.center,
-              ),
-              if (_isScraping) ...[
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const SizedBox(
-                      height: 16,
-                      width: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Enhancing with company info...',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ],
+      body: Stack(
+        children: [
+          // Background decorative blurs
+          Positioned(
+            top: MediaQuery.of(context).size.height * 0.1,
+            right: -MediaQuery.of(context).size.width * 0.1,
+            child: ImageFiltered(
+              imageFilter: ImageFilter.blur(sigmaX: 100, sigmaY: 100),
+              child: Container(
+                width: 384,
+                height: 384,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppTheme.secondaryFixed.withValues(alpha: 0.20),
                 ),
-              ],
-              const SizedBox(height: 32),
-              Expanded(
-                child: Center(
-                  child: Card(
-                    elevation: 4,
-                    shadowColor: Theme.of(context).colorScheme.shadow,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Container(
-                      width: double.infinity,
-                      constraints: const BoxConstraints(maxWidth: 340),
-                      padding: const EdgeInsets.all(32),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          CircleAvatar(
-                            radius: 40,
-                            backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                            backgroundImage: profilePicUrl != null && profilePicUrl.isNotEmpty
-                                ? NetworkImage(profilePicUrl)
-                                : null,
-                            child: profilePicUrl == null || profilePicUrl.isEmpty
-                                ? Text(
-                                    firstName.isNotEmpty ? firstName[0].toUpperCase() : '?',
-                                    style: TextStyle(
-                                      fontSize: 32,
-                                      fontWeight: FontWeight.bold,
-                                      color: Theme.of(context).colorScheme.onPrimaryContainer,
-                                    ),
-                                  )
-                                : null,
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: MediaQuery.of(context).size.height * 0.05,
+            left: -MediaQuery.of(context).size.width * 0.05,
+            child: ImageFiltered(
+              imageFilter: ImageFilter.blur(sigmaX: 80, sigmaY: 80),
+              child: Container(
+                width: 256,
+                height: 256,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: colors.errorContainer.withValues(alpha: 0.30),
+                ),
+              ),
+            ),
+          ),
+          SafeArea(
+            child: Column(
+              children: [
+                // Top Navigation
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'BioBiz',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -0.5,
+                          color: colors.primaryContainer,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => context.pop(),
+                      ),
+                    ],
+                  ),
+                ),
+                // Content
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 32),
+                        // Headline Section
+                        Text(
+                          'Your card is ready!',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -0.3,
+                            color: colors.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Preview your digital identity below',
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            color: colors.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(height: 40),
+
+                        // Digital Business Card
+                        _buildBusinessCard(
+                          context,
+                          firstName: firstName,
+                          lastName: lastName,
+                          company: company,
+                          jobTitle: jobTitle,
+                          email: email,
+                          profilePicUrl: profilePicUrl,
+                        ),
+
+                        // Scraping indicator
+                        if (_isScraping) ...[
+                          const SizedBox(height: 48),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              for (int i = 0; i < 3; i++) ...[
+                                _BouncingDot(
+                                  color: colors.primary,
+                                  delay: Duration(milliseconds: i * 150),
+                                ),
+                                if (i < 2) const SizedBox(width: 6),
+                              ],
+                            ],
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            '$firstName ${lastName}'.trim(),
-                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-                            textAlign: TextAlign.center,
+                            'Enhancing with company info...',
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              fontStyle: FontStyle.italic,
+                              color: colors.onSurfaceVariant,
+                            ),
                           ),
-                          if (jobTitle != null && jobTitle.isNotEmpty) ...[
-                            const SizedBox(height: 4),
-                            Text(
-                              jobTitle,
-                              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                  ),
-                            ),
-                          ],
-                          if (company != null && company.isNotEmpty) ...[
-                            const SizedBox(height: 2),
-                            Text(
-                              company,
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ),
-                          ],
-                          const SizedBox(height: 24),
-                          const Divider(),
-                          const SizedBox(height: 16),
-                          if (email != null && email.isNotEmpty)
-                            _buildContactRow(context, Icons.email_outlined, email),
                         ],
-                      ),
+                        const SizedBox(height: 48),
+
+                        // Action Buttons
+                        SizedBox(
+                          width: 340,
+                          child: HeritageGradientButton(
+                            onPressed: _isSaving ? null : _createCard,
+                            height: 56,
+                            child: _isSaving
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : Text(
+                                    'Save my card',
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          width: 340,
+                          height: 56,
+                          child: OutlinedButton(
+                            onPressed: _isSaving ? null : _editCard,
+                            child: Text(
+                              'Edit details',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 48),
+
+                        // Sign in link
+                        Text.rich(
+                          TextSpan(
+                            text: 'Already have an account? ',
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              color: colors.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () => context.go('/login'),
+                          child: Text(
+                            'Sign in',
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: colors.primary,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                      ],
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 24),
-              FilledButton(
-                onPressed: _isSaving ? null : _createCard,
-                child: _isSaving
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('Save my card'),
-              ),
-              const SizedBox(height: 12),
-              OutlinedButton(
-                onPressed: _isSaving ? null : _editCard,
-                child: const Text('Edit details'),
-              ),
-              const SizedBox(height: 16),
-            ],
+              ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
 
-  Widget _buildContactRow(BuildContext context, IconData icon, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        children: [
-          Icon(icon, size: 20, color: Theme.of(context).colorScheme.primary),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(value, style: Theme.of(context).textTheme.bodyMedium),
+  Widget _buildBusinessCard(
+    BuildContext context, {
+    required String firstName,
+    required String lastName,
+    String? company,
+    String? jobTitle,
+    String? email,
+    String? profilePicUrl,
+  }) {
+    final colors = Theme.of(context).colorScheme;
+
+    return Container(
+      width: 340,
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E3A5F),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.12),
+            blurRadius: 40,
+            offset: const Offset(0, 20),
+          ),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
+      child: AspectRatio(
+        aspectRatio: 1.586,
+        child: Stack(
+          children: [
+            // Background texture
+            Positioned(
+              top: -40,
+              right: -20,
+              child: Container(
+                width: 256,
+                height: 256,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: 0.05),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Card Header
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '$firstName $lastName'.trim(),
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -0.3,
+                                color: Colors.white,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            if (jobTitle != null && jobTitle.isNotEmpty) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                jobTitle.toUpperCase(),
+                                style: GoogleFonts.inter(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w500,
+                                  letterSpacing: 1.0,
+                                  color: const Color(0xFF90CAF9),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.10),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.20),
+                          ),
+                        ),
+                        child: const Icon(Icons.qr_code_2, color: Colors.white, size: 24),
+                      ),
+                    ],
+                  ),
+                  // Card Bottom
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (company != null && company.isNotEmpty) ...[
+                              Text(
+                                company,
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white.withValues(alpha: 0.9),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                            ],
+                            if (email != null && email.isNotEmpty)
+                              Row(
+                                children: [
+                                  Icon(Icons.mail, size: 12, color: Colors.white.withValues(alpha: 0.6)),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      email,
+                                      style: GoogleFonts.inter(
+                                        fontSize: 10,
+                                        color: Colors.white.withValues(alpha: 0.6),
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                          ],
+                        ),
+                      ),
+                      RotatedBox(
+                        quarterTurns: 3,
+                        child: Text(
+                          'BIOBIZ ELITE',
+                          style: GoogleFonts.inter(
+                            fontSize: 8,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 1.6,
+                            color: Colors.white.withValues(alpha: 0.4),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Bouncing dot for loading animation
+class _BouncingDot extends StatefulWidget {
+  final Color color;
+  final Duration delay;
+  const _BouncingDot({required this.color, required this.delay});
+
+  @override
+  State<_BouncingDot> createState() => _BouncingDotState();
+}
+
+class _BouncingDotState extends State<_BouncingDot> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _animation = Tween(begin: 0.0, end: -8.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+    Future.delayed(widget.delay, () {
+      if (mounted) _controller.repeat(reverse: true);
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return Transform.translate(
+          offset: Offset(0, _animation.value),
+          child: Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: widget.color,
+            ),
+          ),
+        );
+      },
     );
   }
 }

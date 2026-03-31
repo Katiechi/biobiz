@@ -2,10 +2,12 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:record/record.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
+import 'package:biobiz_mobile/app/theme.dart';
 import '../../../core/services/ai_summary_service.dart';
 
 /// AI Notetaker - Record meetings, get AI-powered summaries
@@ -17,7 +19,7 @@ class NotetakerScreen extends ConsumerStatefulWidget {
 }
 
 class _NotetakerScreenState extends ConsumerState<NotetakerScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   final _supabase = Supabase.instance.client;
   final _recorder = AudioRecorder();
   bool _isRecording = false;
@@ -28,11 +30,20 @@ class _NotetakerScreenState extends ConsumerState<NotetakerScreen>
   bool _isLoading = true;
   bool _isSaving = false;
   late TabController _tabController;
+  late AnimationController _pulseController;
+  late Animation<double> _pulseAnimation;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2000),
+    )..repeat();
+    _pulseAnimation = Tween<double>(begin: 0.95, end: 1.05).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
     _loadRecordings();
   }
 
@@ -41,6 +52,7 @@ class _NotetakerScreenState extends ConsumerState<NotetakerScreen>
     _timer?.cancel();
     _recorder.dispose();
     _tabController.dispose();
+    _pulseController.dispose();
     super.dispose();
   }
 
@@ -244,13 +256,57 @@ class _NotetakerScreenState extends ConsumerState<NotetakerScreen>
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('AI Notetaker'),
-        bottom: TabBar(controller: _tabController, tabs: const [
-          Tab(text: 'Record'),
-          Tab(text: 'Recordings'),
-        ]),
+        title: Text(
+          'AI Notetaker',
+          style: GoogleFonts.plusJakartaSans(
+            fontWeight: FontWeight.w700,
+            fontSize: 20,
+          ),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(56),
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: cs.surfaceContainer,
+              borderRadius: BorderRadius.circular(100),
+            ),
+            child: TabBar(
+              controller: _tabController,
+              indicator: BoxDecoration(
+                color: cs.surfaceContainerLowest,
+                borderRadius: BorderRadius.circular(100),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.06),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
+              ),
+              indicatorSize: TabBarIndicatorSize.tab,
+              dividerColor: Colors.transparent,
+              labelColor: cs.primary,
+              unselectedLabelColor: cs.onSurfaceVariant,
+              labelStyle: GoogleFonts.plusJakartaSans(
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+              ),
+              unselectedLabelStyle: GoogleFonts.inter(
+                fontWeight: FontWeight.w500,
+                fontSize: 14,
+              ),
+              tabs: const [
+                Tab(text: 'Record'),
+                Tab(text: 'Recordings'),
+              ],
+            ),
+          ),
+        ),
       ),
       body: TabBarView(
         controller: _tabController,
@@ -261,116 +317,225 @@ class _NotetakerScreenState extends ConsumerState<NotetakerScreen>
   }
 
   Widget _buildRecordTab() {
+    final cs = Theme.of(context).colorScheme;
     return Center(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Animated indicator
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              width: _isRecording ? 180 : 140,
-              height: _isRecording ? 180 : 140,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: _isRecording
-                    ? Theme.of(context)
-                        .colorScheme
-                        .error
-                        .withValues(alpha: 0.1)
-                    : Theme.of(context)
-                        .colorScheme
-                        .primary
-                        .withValues(alpha: 0.1),
-              ),
-              child: Center(
-                child: Icon(
-                  _isRecording ? Icons.mic : Icons.mic_none,
-                  size: 48,
-                  color: _isRecording
-                      ? Theme.of(context).colorScheme.error
-                      : Theme.of(context).colorScheme.primary,
-                ),
-              ),
-            ),
+            // Pulsing mic visualizer
+            _buildMicVisualizer(cs),
             const SizedBox(height: 32),
+            // Timer display - Plus Jakarta Sans, extra bold, monospace-like
             Text(
               _isRecording ? _formatTime(_recordingSeconds) : '00:00',
-              style: Theme.of(context)
-                  .textTheme
-                  .displaySmall
-                  ?.copyWith(fontWeight: FontWeight.w300),
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 56,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -2.0,
+                color: cs.onSurface,
+              ),
             ),
             const SizedBox(height: 8),
-            Text(
-              _isSaving
-                  ? 'Saving recording...'
-                  : _isRecording
-                      ? (_isPaused ? 'Paused' : 'Recording...')
-                      : 'Tap to start recording',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: _isRecording && !_isPaused
-                      ? Theme.of(context).colorScheme.error
-                      : Theme.of(context).colorScheme.onSurfaceVariant),
+            // Status indicator
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (_isRecording && !_isPaused && !_isSaving) ...[
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: cs.primary,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                Text(
+                  _isSaving
+                      ? 'Saving recording...'
+                      : _isRecording
+                          ? (_isPaused ? 'PAUSED' : 'RECORDING')
+                          : 'READY TO CAPTURE',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: 1.5,
+                    color: _isRecording && !_isPaused
+                        ? cs.primary
+                        : cs.onSurfaceVariant,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 48),
             if (_isSaving) ...[
-              const CircularProgressIndicator(),
+              SizedBox(
+                width: 48,
+                height: 48,
+                child: CircularProgressIndicator(
+                  strokeWidth: 3,
+                  color: cs.primary,
+                ),
+              ),
             ] else if (_isRecording) ...[
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  FloatingActionButton(
-                    heroTag: 'pause',
-                    onPressed: _togglePause,
-                    backgroundColor:
-                        Theme.of(context).colorScheme.surfaceContainerHighest,
-                    child: Icon(_isPaused ? Icons.play_arrow : Icons.pause),
+                  // Pause button - tonal style
+                  SizedBox(
+                    width: 56,
+                    height: 56,
+                    child: Material(
+                      color: cs.surfaceContainerHigh,
+                      shape: const CircleBorder(),
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        onTap: _togglePause,
+                        child: Center(
+                          child: Icon(
+                            _isPaused ? Icons.play_arrow : Icons.pause,
+                            color: cs.onSurface,
+                            size: 28,
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                   const SizedBox(width: 32),
-                  FloatingActionButton.large(
-                    heroTag: 'stop',
-                    onPressed: _stopRecording,
-                    backgroundColor: Theme.of(context).colorScheme.error,
-                    foregroundColor: Colors.white,
-                    child: const Icon(Icons.stop, size: 36),
+                  // Stop button - primary gradient style
+                  SizedBox(
+                    width: 80,
+                    height: 80,
+                    child: Material(
+                      shape: const CircleBorder(),
+                      clipBehavior: Clip.antiAlias,
+                      child: Ink(
+                        decoration: BoxDecoration(
+                          gradient: AppTheme.heritageGradient,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: cs.primary.withValues(alpha: 0.3),
+                              blurRadius: 20,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
+                        ),
+                        child: InkWell(
+                          onTap: _stopRecording,
+                          child: const Center(
+                            child: Icon(Icons.stop, size: 36, color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),
             ] else ...[
-              FloatingActionButton.large(
-                heroTag: 'record',
-                onPressed: _startRecording,
-                backgroundColor: Theme.of(context).colorScheme.error,
-                foregroundColor: Colors.white,
-                child: const Icon(Icons.fiber_manual_record, size: 36),
+              // Record FAB - primary color with shadow
+              SizedBox(
+                width: 80,
+                height: 80,
+                child: Material(
+                  shape: const CircleBorder(),
+                  clipBehavior: Clip.antiAlias,
+                  child: Ink(
+                    decoration: BoxDecoration(
+                      gradient: AppTheme.heritageGradient,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: cs.primary.withValues(alpha: 0.3),
+                          blurRadius: 20,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: InkWell(
+                      onTap: _startRecording,
+                      child: const Center(
+                        child: Icon(
+                          Icons.fiber_manual_record,
+                          size: 36,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ],
-            const SizedBox(height: 48),
+            const SizedBox(height: 32),
+            // Real-time transcription placeholder
+            if (_isRecording && !_isSaving)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                decoration: BoxDecoration(
+                  color: cs.surfaceContainerLow,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Text(
+                  'Transcribing in real-time as you speak...',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontStyle: FontStyle.italic,
+                    color: cs.onSurfaceVariant.withValues(alpha: 0.6),
+                  ),
+                ),
+              ),
+            const SizedBox(height: 16),
+            // Tips container - secondaryContainer background with lightbulb
             if (!_isRecording && !_isSaving)
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color:
-                      Theme.of(context).colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(12),
+                  color: cs.surfaceContainerHigh,
+                  borderRadius: BorderRadius.circular(16),
                 ),
-                child: Column(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(children: [
-                      Icon(Icons.lightbulb_outline,
-                          size: 20,
-                          color: Theme.of(context).colorScheme.primary),
-                      const SizedBox(width: 8),
-                      Text('Tips',
-                          style: Theme.of(context).textTheme.titleSmall),
-                    ]),
-                    const SizedBox(height: 8),
-                    _buildTip('Place your phone near the conversation'),
-                    _buildTip('Works best in quieter environments'),
-                    _buildTip(
-                        'AI will summarize key points and action items'),
+                    // Lightbulb icon in secondaryContainer
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: cs.secondaryContainer,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        Icons.lightbulb,
+                        size: 20,
+                        color: cs.onSecondaryContainer,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Pro Tips',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: cs.onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          _buildTip('Place your phone near the conversation'),
+                          _buildTip('Works best in quieter environments'),
+                          _buildTip(
+                              'AI will summarize key points and action items'),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -380,20 +545,129 @@ class _NotetakerScreenState extends ConsumerState<NotetakerScreen>
     );
   }
 
+  Widget _buildMicVisualizer(ColorScheme cs) {
+    if (_isRecording) {
+      return AnimatedBuilder(
+        animation: _pulseAnimation,
+        builder: (context, child) {
+          return Stack(
+            alignment: Alignment.center,
+            children: [
+              // Outer pulse ring
+              Transform.scale(
+                scale: _pulseAnimation.value,
+                child: Container(
+                  width: 192,
+                  height: 192,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: cs.primary.withValues(alpha: 0.1),
+                  ),
+                ),
+              ),
+              // Inner filled circle
+              Container(
+                width: 128,
+                height: 128,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: AppTheme.heritageGradient,
+                  boxShadow: [
+                    BoxShadow(
+                      color: cs.primary.withValues(alpha: 0.2),
+                      blurRadius: 24,
+                      spreadRadius: 4,
+                    ),
+                  ],
+                ),
+                child: const Center(
+                  child: Icon(
+                    Icons.mic,
+                    size: 48,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      );
+    }
+
+    // Not recording - static state
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        // Outer ring
+        Container(
+          width: 160,
+          height: 160,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: cs.primary.withValues(alpha: 0.08),
+          ),
+        ),
+        // Inner filled circle
+        Container(
+          width: 128,
+          height: 128,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: AppTheme.heritageGradient,
+            boxShadow: [
+              BoxShadow(
+                color: cs.primary.withValues(alpha: 0.2),
+                blurRadius: 16,
+              ),
+            ],
+          ),
+          child: const Center(
+            child: Icon(
+              Icons.mic,
+              size: 48,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildTip(String text) {
     return Padding(
       padding: const EdgeInsets.only(top: 4),
-      child: Row(children: [
-        Text('  •  ', style: Theme.of(context).textTheme.bodySmall),
-        Expanded(
-            child:
-                Text(text, style: Theme.of(context).textTheme.bodySmall)),
-      ]),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '\u2022  ',
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+          Expanded(
+            child: Text(
+              text,
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildRecordingsTab() {
-    if (_isLoading) return const Center(child: CircularProgressIndicator());
+    final cs = Theme.of(context).colorScheme;
+    if (_isLoading) {
+      return Center(
+        child: CircularProgressIndicator(color: cs.primary),
+      );
+    }
     if (_recordings.isEmpty) {
       return Center(
         child: Padding(
@@ -401,22 +675,30 @@ class _NotetakerScreenState extends ConsumerState<NotetakerScreen>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.library_music_outlined,
-                  size: 80,
-                  color: Theme.of(context).colorScheme.primary),
+              Container(
+                width: 88,
+                height: 88,
+                decoration: BoxDecoration(
+                  color: cs.primary.withValues(alpha: 0.08),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.library_music_outlined,
+                    size: 44, color: cs.primary),
+              ),
               const SizedBox(height: 24),
               Text('No recordings yet',
-                  style: Theme.of(context)
-                      .textTheme
-                      .headlineSmall
-                      ?.copyWith(fontWeight: FontWeight.bold)),
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    color: cs.onSurface,
+                  )),
               const SizedBox(height: 8),
               Text('Record a meeting to get AI-powered summaries',
                   textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurfaceVariant)),
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: cs.onSurfaceVariant,
+                  )),
             ],
           ),
         ),
@@ -424,6 +706,7 @@ class _NotetakerScreenState extends ConsumerState<NotetakerScreen>
     }
 
     return RefreshIndicator(
+      color: cs.primary,
       onRefresh: _loadRecordings,
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
@@ -435,6 +718,7 @@ class _NotetakerScreenState extends ConsumerState<NotetakerScreen>
   }
 
   Widget _buildRecordingCard(Map<String, dynamic> recording) {
+    final cs = Theme.of(context).colorScheme;
     final duration = recording['duration_seconds'] as int? ?? 0;
     final status = recording['status'] as String? ?? 'completed';
     final createdAt = DateTime.tryParse(recording['created_at'] ?? '');
@@ -449,74 +733,95 @@ class _NotetakerScreenState extends ConsumerState<NotetakerScreen>
     }
     final hasSummary = summary != null;
 
-    return Card(
+    // No-line design: tonal depth with surfaceContainerLowest, no borders
+    return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      child: InkWell(
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(16),
-        onTap: () => _showRecordingDetail(recording),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .primary
-                        .withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () => _showRecordingDetail(recording),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(children: [
+                  // Mic icon with primary tonal bg
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: cs.primary.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(Icons.mic,
+                        color: cs.primary, size: 20),
                   ),
-                  child: Icon(Icons.mic,
-                      color: Theme.of(context).colorScheme.primary,
-                      size: 20),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Recording ${_formatDate(createdAt)}',
-                            style:
-                                Theme.of(context).textTheme.titleSmall),
-                        Text(
-                            '${_formatTime(duration)} • ${_statusLabel(status)}',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurfaceVariant)),
-                      ]),
-                ),
-                if (hasSummary)
-                  Chip(
-                    label: Text('AI Summary',
-                        style: TextStyle(
-                            fontSize: 11,
-                            color:
-                                Theme.of(context).colorScheme.primary)),
-                    backgroundColor: Theme.of(context)
-                        .colorScheme
-                        .primary
-                        .withValues(alpha: 0.1),
-                    side: BorderSide.none,
-                    padding: EdgeInsets.zero,
-                    materialTapTargetSize:
-                        MaterialTapTargetSize.shrinkWrap,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Recording ${_formatDate(createdAt)}',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: cs.onSurface,
+                              )),
+                          const SizedBox(height: 2),
+                          Text(
+                              '${_formatTime(duration)} \u2022 ${_statusLabel(status)}',
+                              style: GoogleFonts.inter(
+                                fontSize: 12,
+                                color: cs.onSurfaceVariant,
+                              )),
+                        ]),
                   ),
-              ]),
-              if (summary != null && summary['summary'] != null) ...[
-                const SizedBox(height: 12),
-                Text(summary['summary'] as String,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodySmall),
+                  // AI Summary chip - secondaryContainer/gold styling
+                  if (hasSummary)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: cs.secondaryContainer,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.auto_awesome,
+                              size: 12,
+                              color: cs.onSecondaryContainer),
+                          const SizedBox(width: 4),
+                          Text('AI Summary',
+                              style: GoogleFonts.inter(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: cs.onSecondaryContainer,
+                              )),
+                        ],
+                      ),
+                    ),
+                ]),
+                if (summary != null && summary['summary'] != null) ...[
+                  const SizedBox(height: 12),
+                  Text(summary['summary'] as String,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        color: cs.onSurfaceVariant,
+                        height: 1.4,
+                      )),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),
@@ -541,7 +846,8 @@ class _NotetakerScreenState extends ConsumerState<NotetakerScreen>
     showDialog(
       context: ctx,
       builder: (dialogCtx) => AlertDialog(
-        title: const Text('Delete recording?'),
+        title: Text('Delete recording?',
+            style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
         content:
             const Text('This will permanently delete this recording.'),
         actions: [
@@ -662,6 +968,7 @@ class _RecordingDetailSheetState extends State<_RecordingDetailSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final duration = widget.recording['duration_seconds'] as int? ?? 0;
     final createdAt = DateTime.tryParse(widget.recording['created_at'] ?? '');
     final rawSummary = widget.recording['recording_summaries'];
@@ -681,7 +988,7 @@ class _RecordingDetailSheetState extends State<_RecordingDetailSheet> {
       minChildSize: 0.5,
       builder: (ctx, scrollCtrl) => Container(
         decoration: BoxDecoration(
-          color: Theme.of(context).scaffoldBackgroundColor,
+          color: cs.surfaceContainerLowest,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: Column(children: [
@@ -691,7 +998,7 @@ class _RecordingDetailSheetState extends State<_RecordingDetailSheet> {
               margin: const EdgeInsets.only(top: 12),
               width: 40, height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey.shade300,
+                color: cs.outlineVariant,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -703,15 +1010,19 @@ class _RecordingDetailSheetState extends State<_RecordingDetailSheet> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text('Recording Details',
-                    style: Theme.of(context).textTheme.titleLarge),
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: cs.onSurface,
+                    )),
                 Row(children: [
                   IconButton(
                     icon: Icon(Icons.delete_outline,
-                        color: Theme.of(context).colorScheme.error),
+                        color: cs.error),
                     onPressed: widget.onDelete,
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close),
+                    icon: Icon(Icons.close, color: cs.onSurfaceVariant),
                     onPressed: () => Navigator.pop(ctx),
                   ),
                 ]),
@@ -726,7 +1037,7 @@ class _RecordingDetailSheetState extends State<_RecordingDetailSheet> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Info chips
+                  // Info chips - tonal style
                   Row(children: [
                     _chip(context, Icons.timer,
                         '${(duration ~/ 60).toString().padLeft(2, '0')}:${(duration % 60).toString().padLeft(2, '0')}'),
@@ -740,22 +1051,35 @@ class _RecordingDetailSheetState extends State<_RecordingDetailSheet> {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                        color: cs.surfaceContainerHigh,
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Column(children: [
                         Row(children: [
-                          IconButton.filled(
-                            onPressed: () {
-                              if (_player.playing) {
-                                _player.pause();
-                              } else {
-                                _player.play();
-                              }
-                            },
-                            icon: Icon(
-                              _player.playing ? Icons.pause : Icons.play_arrow,
-                              size: 28,
+                          // Play button with primary color
+                          SizedBox(
+                            width: 48,
+                            height: 48,
+                            child: Material(
+                              color: cs.primary,
+                              shape: const CircleBorder(),
+                              clipBehavior: Clip.antiAlias,
+                              child: InkWell(
+                                onTap: () {
+                                  if (_player.playing) {
+                                    _player.pause();
+                                  } else {
+                                    _player.play();
+                                  }
+                                },
+                                child: Center(
+                                  child: Icon(
+                                    _player.playing ? Icons.pause : Icons.play_arrow,
+                                    size: 28,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -764,8 +1088,13 @@ class _RecordingDetailSheetState extends State<_RecordingDetailSheet> {
                               SliderTheme(
                                 data: SliderTheme.of(context).copyWith(
                                   trackHeight: 4,
+                                  activeTrackColor: cs.primary,
+                                  inactiveTrackColor: cs.surfaceContainerHighest,
+                                  thumbColor: cs.primary,
                                   thumbShape: const RoundSliderThumbShape(
                                       enabledThumbRadius: 6),
+                                  overlayShape: const RoundSliderOverlayShape(
+                                      overlayRadius: 14),
                                 ),
                                 child: Slider(
                                   value: _position.inMilliseconds
@@ -786,13 +1115,15 @@ class _RecordingDetailSheetState extends State<_RecordingDetailSheet> {
                                       MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(_fmt(_position),
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall),
+                                        style: GoogleFonts.inter(
+                                          fontSize: 12,
+                                          color: cs.onSurfaceVariant,
+                                        )),
                                     Text(_fmt(_duration),
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall),
+                                        style: GoogleFonts.inter(
+                                          fontSize: 12,
+                                          color: cs.onSurfaceVariant,
+                                        )),
                                   ],
                                 ),
                               ),
@@ -807,18 +1138,23 @@ class _RecordingDetailSheetState extends State<_RecordingDetailSheet> {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                        color: cs.surfaceContainerHigh,
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           SizedBox(
                               height: 20,
                               width: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2)),
-                          SizedBox(width: 12),
-                          Text('Loading audio...'),
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2, color: cs.primary)),
+                          const SizedBox(width: 12),
+                          Text('Loading audio...',
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                color: cs.onSurfaceVariant,
+                              )),
                         ],
                       ),
                     ),
@@ -830,22 +1166,23 @@ class _RecordingDetailSheetState extends State<_RecordingDetailSheet> {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .primaryContainer,
+                        color: cs.primaryContainer,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(children: [
-                        const SizedBox(
+                        SizedBox(
                             height: 20,
                             width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2)),
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: cs.onPrimaryContainer)),
                         const SizedBox(width: 12),
                         Text('Generating AI summary...',
-                            style: TextStyle(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onPrimaryContainer)),
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: cs.onPrimaryContainer,
+                            )),
                       ]),
                     ),
                     const SizedBox(height: 24),
@@ -854,66 +1191,88 @@ class _RecordingDetailSheetState extends State<_RecordingDetailSheet> {
                   // Summary content
                   if (summary != null) ...[
                     if (summary['summary'] != null) ...[
-                      Text('Summary',
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleMedium
-                              ?.copyWith(fontWeight: FontWeight.bold)),
+                      _sectionHeader(context, 'Summary', Icons.auto_awesome),
                       const SizedBox(height: 8),
-                      Text(summary['summary'] as String),
+                      Text(summary['summary'] as String,
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            height: 1.6,
+                            color: cs.onSurface,
+                          )),
                       const SizedBox(height: 24),
                     ],
                     if (summary['transcript'] != null &&
                         (summary['transcript'] as String).isNotEmpty) ...[
-                      Text('Transcript',
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleMedium
-                              ?.copyWith(fontWeight: FontWeight.bold)),
+                      _sectionHeader(context, 'Transcript', Icons.description_outlined),
                       const SizedBox(height: 8),
-                      Text(summary['transcript'] as String,
-                          style: Theme.of(context).textTheme.bodySmall),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: cs.surfaceContainerLow,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(summary['transcript'] as String,
+                            style: GoogleFonts.inter(
+                              fontSize: 13,
+                              height: 1.6,
+                              color: cs.onSurfaceVariant,
+                            )),
+                      ),
                       const SizedBox(height: 24),
                     ],
                     if (summary['key_insights'] != null &&
                         (summary['key_insights'] as List).isNotEmpty) ...[
-                      Text('Key Insights',
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleMedium
-                              ?.copyWith(fontWeight: FontWeight.bold)),
+                      _sectionHeader(context, 'Key Insights', Icons.lightbulb_outline),
                       const SizedBox(height: 8),
                       ...((summary['key_insights'] as List).map((i) => Padding(
-                            padding: const EdgeInsets.only(bottom: 4),
+                            padding: const EdgeInsets.only(bottom: 6),
                             child: Row(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text('  •  '),
-                                  Expanded(child: Text(i as String)),
+                                  Container(
+                                    margin: const EdgeInsets.only(top: 6),
+                                    width: 6,
+                                    height: 6,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: cs.primary,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(i as String,
+                                        style: GoogleFonts.inter(
+                                          fontSize: 14,
+                                          height: 1.5,
+                                          color: cs.onSurface,
+                                        )),
+                                  ),
                                 ]),
                           ))),
                       const SizedBox(height: 24),
                     ],
                     if (summary['action_items'] != null &&
                         (summary['action_items'] as List).isNotEmpty) ...[
-                      Text('Action Items',
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleMedium
-                              ?.copyWith(fontWeight: FontWeight.bold)),
+                      _sectionHeader(context, 'Action Items', Icons.task_alt),
                       const SizedBox(height: 8),
                       ...((summary['action_items'] as List).map((i) => Padding(
-                            padding: const EdgeInsets.only(bottom: 4),
+                            padding: const EdgeInsets.only(bottom: 6),
                             child: Row(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Icon(Icons.check_box_outline_blank,
                                       size: 18,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurfaceVariant),
-                                  const SizedBox(width: 8),
-                                  Expanded(child: Text(i as String)),
+                                      color: cs.primary),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(i as String,
+                                        style: GoogleFonts.inter(
+                                          fontSize: 14,
+                                          height: 1.5,
+                                          color: cs.onSurface,
+                                        )),
+                                  ),
                                 ]),
                           ))),
                     ],
@@ -922,28 +1281,36 @@ class _RecordingDetailSheetState extends State<_RecordingDetailSheet> {
                       child: Padding(
                         padding: const EdgeInsets.symmetric(vertical: 48),
                         child: Column(children: [
-                          Icon(Icons.auto_awesome,
-                              size: 48,
-                              color: Theme.of(context).colorScheme.primary),
+                          Container(
+                            width: 72,
+                            height: 72,
+                            decoration: BoxDecoration(
+                              color: cs.primary.withValues(alpha: 0.08),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(Icons.auto_awesome,
+                                size: 36, color: cs.primary),
+                          ),
                           const SizedBox(height: 16),
                           Text('No AI summary yet',
-                              style: Theme.of(context).textTheme.titleMedium),
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                                color: cs.onSurface,
+                              )),
                           const SizedBox(height: 8),
                           Text(
                               'Tap below to generate a summary.',
                               textAlign: TextAlign.center,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.copyWith(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurfaceVariant)),
-                          const SizedBox(height: 16),
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                color: cs.onSurfaceVariant,
+                              )),
+                          const SizedBox(height: 20),
                           if (widget.onRetrySummary != null &&
                               widget.audioUrl != null &&
                               !widget.audioUrl!.startsWith('pending://'))
-                            FilledButton.icon(
+                            HeritageGradientButton(
                               onPressed: _isRetrying
                                   ? null
                                   : () async {
@@ -957,16 +1324,32 @@ class _RecordingDetailSheetState extends State<_RecordingDetailSheet> {
                                         Navigator.pop(context);
                                       }
                                     },
-                              icon: _isRetrying
-                                  ? const SizedBox(
+                              height: 48,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (_isRetrying)
+                                    const SizedBox(
                                       height: 16,
                                       width: 16,
                                       child: CircularProgressIndicator(
                                           strokeWidth: 2, color: Colors.white))
-                                  : const Icon(Icons.auto_awesome),
-                              label: Text(_isRetrying
-                                  ? 'Generating...'
-                                  : 'Generate AI Summary'),
+                                  else
+                                    const Icon(Icons.auto_awesome,
+                                        size: 18, color: Colors.white),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    _isRetrying
+                                        ? 'Generating...'
+                                        : 'Generate AI Summary',
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                         ]),
                       ),
@@ -982,18 +1365,39 @@ class _RecordingDetailSheetState extends State<_RecordingDetailSheet> {
     );
   }
 
+  Widget _sectionHeader(BuildContext context, String title, IconData icon) {
+    final cs = Theme.of(context).colorScheme;
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: cs.primary),
+        const SizedBox(width: 8),
+        Text(title,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: cs.onSurface,
+            )),
+      ],
+    );
+  }
+
   Widget _chip(BuildContext context, IconData icon, String label) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
+        color: cs.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(10),
       ),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Icon(icon, size: 14,
-            color: Theme.of(context).colorScheme.onSurfaceVariant),
-        const SizedBox(width: 4),
-        Text(label, style: Theme.of(context).textTheme.bodySmall),
+        Icon(icon, size: 14, color: cs.onSurfaceVariant),
+        const SizedBox(width: 6),
+        Text(label,
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: cs.onSurfaceVariant,
+            )),
       ]),
     );
   }

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../../app/theme.dart';
 import '../../../core/providers/auth_provider.dart';
 
 /// Story 2.4: Account creation during onboarding (email + OAuth)
@@ -112,7 +114,8 @@ class _OnboardingCreateAccountScreenState
               Text(
                 'Save your card',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w800,
+                      fontFamily: GoogleFonts.plusJakartaSans().fontFamily,
                     ),
               ),
               const SizedBox(height: 8),
@@ -156,15 +159,29 @@ class _OnboardingCreateAccountScreenState
               const SizedBox(height: 24),
 
               // Register button
-              FilledButton(
+              HeritageGradientButton(
                 onPressed: _isLoading ? null : _registerWithEmail,
                 child: _isLoading
                     ? const SizedBox(
                         height: 20,
                         width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                       )
-                    : const Text('Create account'),
+                    : Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.person_add, color: Colors.white),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Create account',
+                            style: GoogleFonts.plusJakartaSans(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
               ),
               const SizedBox(height: 24),
 

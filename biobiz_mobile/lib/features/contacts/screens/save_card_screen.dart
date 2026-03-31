@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../app/theme.dart';
 import '../../card_view/widgets/card_renderer.dart';
 
 /// Screen shown when a user opens a shared card link (deep link).
@@ -209,14 +211,35 @@ class _SaveCardScreenState extends State<SaveCardScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline,
-                size: 64, color: Theme.of(context).colorScheme.error),
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.error_outline,
+                  size: 64, color: Theme.of(context).colorScheme.error),
+            ),
             const SizedBox(height: 16),
             Text(_error!, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 24),
-            FilledButton(
+            HeritageGradientButton(
               onPressed: () => context.go('/card'),
-              child: const Text('Go Home'),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.home, color: Colors.white),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Go Home',
+                    style: GoogleFonts.plusJakartaSans(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -258,24 +281,51 @@ class _SaveCardScreenState extends State<SaveCardScreen> {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: FilledButton(
+                  child: HeritageGradientButton(
                     onPressed: () => context.go('/card'),
-                    child: const Text('Go Home'),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.home, color: Colors.white),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Go Home',
+                          style: GoogleFonts.plusJakartaSans(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
             ),
           ] else ...[
-            FilledButton.icon(
+            HeritageGradientButton(
               onPressed: _isSaving ? null : _saveContact,
-              icon: _isSaving
+              child: _isSaving
                   ? const SizedBox(
                       height: 18,
                       width: 18,
                       child: CircularProgressIndicator(
                           strokeWidth: 2, color: Colors.white))
-                  : const Icon(Icons.person_add),
-              label: Text(_isSaving ? 'Saving...' : 'Save to My Contacts'),
+                  : Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.person_add, color: Colors.white),
+                        const SizedBox(width: 8),
+                        Text(
+                          _isSaving ? 'Saving...' : 'Save to My Contacts',
+                          style: GoogleFonts.plusJakartaSans(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
             ),
           ],
         ],

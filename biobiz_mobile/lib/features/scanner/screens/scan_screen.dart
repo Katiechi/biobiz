@@ -1,9 +1,15 @@
+import 'dart:math';
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'package:biobiz_mobile/app/theme.dart';
 
 /// Scanner screen with QR Code, My QR, Smart, and Manual modes
 class ScanScreen extends ConsumerStatefulWidget {
@@ -298,21 +304,29 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(title: const Text('Scan')),
       body: Column(
         children: [
-          // Mode tabs
+          // Segmented tab selector
           Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                _buildModeTab('Scan QR', 0),
-                const SizedBox(width: 8),
-                _buildModeTab('My QR', 1),
-                const SizedBox(width: 8),
-                _buildModeTab('Manual', 2),
-              ],
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: cs.surfaceContainerHigh,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Row(
+                children: [
+                  _buildModeTab('Scan QR', 0),
+                  const SizedBox(width: 4),
+                  _buildModeTab('My QR', 1),
+                  const SizedBox(width: 4),
+                  _buildModeTab('Manual', 2),
+                ],
+              ),
             ),
           ),
           Expanded(
@@ -326,11 +340,22 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
           ),
         ],
       ),
+      floatingActionButton: GoldFab(
+        onPressed: () {
+          // Quick share: switch to My QR tab
+          setState(() => _selectedMode = 1);
+          _scannerController?.stop();
+        },
+        icon: Icons.qr_code_2,
+        tooltip: 'Show my QR',
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 
   Widget _buildModeTab(String label, int index) {
     final isSelected = _selectedMode == index;
+    final cs = Theme.of(context).colorScheme;
     return Expanded(
       child: GestureDetector(
         onTap: () {
@@ -341,22 +366,29 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
             _scannerController?.stop();
           }
         },
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            color: isSelected
-                ? Theme.of(context).colorScheme.primary
-                : Theme.of(context).colorScheme.surfaceContainerHighest,
+            color: isSelected ? cs.surfaceContainerLowest : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.06),
+                      blurRadius: 4,
+                      offset: const Offset(0, 1),
+                    ),
+                  ]
+                : null,
           ),
           child: Text(
             label,
             textAlign: TextAlign.center,
-            style: TextStyle(
-              color: isSelected
-                  ? Theme.of(context).colorScheme.onPrimary
-                  : Theme.of(context).colorScheme.onSurfaceVariant,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              color: isSelected ? cs.primary : cs.onSurfaceVariant,
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
             ),
           ),
         ),
@@ -367,46 +399,135 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
   Widget _buildQrScanner() {
     return Stack(
       children: [
-        MobileScanner(
-          controller: _scannerController,
-          onDetect: _onQrDetected,
-        ),
-        Center(
-          child: Container(
-            width: 250,
-            height: 250,
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: Theme.of(context).colorScheme.primary,
-                width: 3,
+        // Camera view in a rounded container
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(32),
+            child: SizedBox(
+              width: double.infinity,
+              height: double.infinity,
+              child: MobileScanner(
+                controller: _scannerController,
+                onDetect: _onQrDetected,
               ),
-              borderRadius: BorderRadius.circular(16),
             ),
           ),
         ),
+        // Dark overlay
+        Positioned.fill(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(32),
+              child: Container(
+                color: Colors.black.withValues(alpha: 0.35),
+              ),
+            ),
+          ),
+        ),
+        // Scanning frame with corner brackets
+        Center(
+          child: SizedBox(
+            width: 250,
+            height: 250,
+            child: CustomPaint(
+              painter: _CornerBracketPainter(
+                color: Colors.white,
+                strokeWidth: 4,
+                cornerLength: 40,
+                cornerRadius: 12,
+              ),
+            ),
+          ),
+        ),
+        // Scanning line animation
+        Center(
+          child: SizedBox(
+            width: 250,
+            height: 250,
+            child: _ScanLineAnimation(),
+          ),
+        ),
+        // Loading overlay
         if (_isSaving)
           Container(
             color: Colors.black54,
             child: const Center(child: CircularProgressIndicator()),
           ),
+        // Camera controls (flash, flip)
+        Positioned(
+          top: 24,
+          right: 40,
+          child: Column(
+            children: [
+              _buildCameraControlButton(
+                icon: Icons.flashlight_on,
+                onTap: () => _scannerController?.toggleTorch(),
+              ),
+              const SizedBox(height: 12),
+              _buildCameraControlButton(
+                icon: Icons.flip_camera_ios,
+                onTap: () => _scannerController?.switchCamera(),
+              ),
+            ],
+          ),
+        ),
+        // Instruction pill
         Positioned(
           bottom: 48,
-          left: 24,
-          right: 24,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.7),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Text(
-              'Point your camera at a QR code',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white, fontSize: 14),
+          left: 0,
+          right: 0,
+          child: Center(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(100),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.25),
+                    borderRadius: BorderRadius.circular(100),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.12),
+                    ),
+                  ),
+                  child: Text(
+                    'Align QR code within the frame',
+                    style: GoogleFonts.inter(
+                      color: Colors.white.withValues(alpha: 0.9),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildCameraControlButton({
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 48,
+        height: 48,
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.4),
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.1),
+          ),
+        ),
+        child: Icon(icon, color: Colors.white, size: 22),
+      ),
     );
   }
 
@@ -419,127 +540,133 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
     final email = card['_email'] as String? ?? '';
     final phone = card['_phone'] as String? ?? '';
     final avatarUrl = card['profile_image_url'] as String?;
+    final cs = Theme.of(context).colorScheme;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
         children: [
           // Success icon
-          Icon(
-            Icons.check_circle,
-            size: 64,
-            color: Theme.of(context).colorScheme.primary,
+          Container(
+            width: 72,
+            height: 72,
+            decoration: BoxDecoration(
+              color: cs.primary.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.check_circle,
+              size: 48,
+              color: cs.primary,
+            ),
           ),
           const SizedBox(height: 16),
           Text(
             'Contact Exchanged!',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+              color: cs.onSurface,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
             'You and $name have exchanged cards',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              color: cs.onSurfaceVariant,
+            ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 32),
 
           // Scanned contact card
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  CircleAvatar(
-                    radius: 36,
-                    backgroundColor:
-                        Theme.of(context).colorScheme.primaryContainer,
-                    backgroundImage:
-                        avatarUrl != null ? NetworkImage(avatarUrl) : null,
-                    child: avatarUrl == null
-                        ? Text(
-                            name.isNotEmpty ? name[0].toUpperCase() : '?',
-                            style: TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onPrimaryContainer,
-                            ),
-                          )
-                        : null,
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: cs.surfaceContainerLowest,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.06),
+                  blurRadius: 20,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                CircleAvatar(
+                  radius: 36,
+                  backgroundColor: cs.primaryContainer,
+                  backgroundImage:
+                      avatarUrl != null ? NetworkImage(avatarUrl) : null,
+                  child: avatarUrl == null
+                      ? Text(
+                          name.isNotEmpty ? name[0].toUpperCase() : '?',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 28,
+                            fontWeight: FontWeight.w700,
+                            color: cs.onPrimaryContainer,
+                          ),
+                        )
+                      : null,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  name,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: cs.onSurface,
                   ),
-                  const SizedBox(height: 12),
-                  Text(name,
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleLarge
-                          ?.copyWith(fontWeight: FontWeight.bold)),
-                  if (jobTitle.isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Text(jobTitle,
-                        style: Theme.of(context).textTheme.bodyMedium),
-                  ],
-                  if (company.isNotEmpty) ...[
-                    const SizedBox(height: 2),
-                    Text(company,
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodySmall
-                            ?.copyWith(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurfaceVariant)),
-                  ],
-                  if (email.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.email_outlined,
-                            size: 16,
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurfaceVariant),
-                        const SizedBox(width: 6),
-                        Text(email,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurfaceVariant)),
-                      ],
-                    ),
-                  ],
-                  if (phone.isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.phone_outlined,
-                            size: 16,
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurfaceVariant),
-                        const SizedBox(width: 6),
-                        Text(phone,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurfaceVariant)),
-                      ],
-                    ),
-                  ],
+                ),
+                if (jobTitle.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(jobTitle,
+                      style: Theme.of(context).textTheme.bodyMedium),
                 ],
-              ),
+                if (company.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(company,
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: cs.onSurfaceVariant,
+                      )),
+                ],
+                if (email.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.email_outlined,
+                          size: 16, color: cs.onSurfaceVariant),
+                      const SizedBox(width: 6),
+                      Text(email,
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            color: cs.onSurfaceVariant,
+                          )),
+                    ],
+                  ),
+                ],
+                if (phone.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.phone_outlined,
+                          size: 16, color: cs.onSurfaceVariant),
+                      const SizedBox(width: 6),
+                      Text(phone,
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            color: cs.onSurfaceVariant,
+                          )),
+                    ],
+                  ),
+                ],
+              ],
             ),
           ),
           const SizedBox(height: 24),
@@ -556,6 +683,13 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.06),
+                    blurRadius: 12,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: QrImageView(
                 data: _myCardUrl!,
@@ -567,9 +701,10 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
             const SizedBox(height: 8),
             Text(
               _myName ?? '',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                color: cs.onSurfaceVariant,
+              ),
             ),
           ],
           const SizedBox(height: 24),
@@ -598,6 +733,8 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
   }
 
   Widget _buildMyQr() {
+    final cs = Theme.of(context).colorScheme;
+
     if (_isLoadingMyCard) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -609,18 +746,17 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.qr_code,
-                  size: 64,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant),
+              Icon(Icons.qr_code, size: 64, color: cs.onSurfaceVariant),
               const SizedBox(height: 16),
               Text('No card yet',
                   style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 8),
               Text('Create a card first to get your QR code',
                   textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color:
-                          Theme.of(context).colorScheme.onSurfaceVariant)),
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: cs.onSurfaceVariant,
+                  )),
               const SizedBox(height: 24),
               FilledButton(
                 onPressed: () => context.go('/card'),
@@ -640,28 +776,37 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
           children: [
             Text(
               'Your QR Code',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+                color: cs.onSurface,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               'Let others scan this to get your card',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                color: cs.onSurfaceVariant,
+              ),
             ),
             const SizedBox(height: 32),
+            // QR card with premium shadow
             Container(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(28),
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
+                color: cs.surfaceContainerLowest,
+                borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
-                    blurRadius: 20,
-                    offset: const Offset(0, 4),
+                    color: Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 24,
+                    offset: const Offset(0, 8),
+                  ),
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
                   ),
                 ],
               ),
@@ -676,10 +821,11 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
                   const SizedBox(height: 16),
                   Text(
                     _myName ?? '',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                        ),
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: cs.onSurface,
+                    ),
                   ),
                 ],
               ),
@@ -814,6 +960,144 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ─── Corner bracket painter for QR scan frame ────────────────────
+class _CornerBracketPainter extends CustomPainter {
+  final Color color;
+  final double strokeWidth;
+  final double cornerLength;
+  final double cornerRadius;
+
+  _CornerBracketPainter({
+    required this.color,
+    required this.strokeWidth,
+    required this.cornerLength,
+    required this.cornerRadius,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = strokeWidth
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    final w = size.width;
+    final h = size.height;
+    final r = cornerRadius;
+    final l = cornerLength;
+
+    // Top-left corner
+    final tlPath = Path()
+      ..moveTo(0, l)
+      ..lineTo(0, r)
+      ..arcToPoint(Offset(r, 0), radius: Radius.circular(r))
+      ..lineTo(l, 0);
+    canvas.drawPath(tlPath, paint);
+
+    // Top-right corner
+    final trPath = Path()
+      ..moveTo(w - l, 0)
+      ..lineTo(w - r, 0)
+      ..arcToPoint(Offset(w, r), radius: Radius.circular(r))
+      ..lineTo(w, l);
+    canvas.drawPath(trPath, paint);
+
+    // Bottom-left corner
+    final blPath = Path()
+      ..moveTo(0, h - l)
+      ..lineTo(0, h - r)
+      ..arcToPoint(Offset(r, h), radius: Radius.circular(r))
+      ..lineTo(l, h);
+    canvas.drawPath(blPath, paint);
+
+    // Bottom-right corner
+    final brPath = Path()
+      ..moveTo(w - l, h)
+      ..lineTo(w - r, h)
+      ..arcToPoint(Offset(w, h - r), radius: Radius.circular(r))
+      ..lineTo(w, h - l);
+    canvas.drawPath(brPath, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+// ─── Scanning line animation widget ──────────────────────────────
+class _ScanLineAnimation extends StatefulWidget {
+  @override
+  State<_ScanLineAnimation> createState() => _ScanLineAnimationState();
+}
+
+class _ScanLineAnimationState extends State<_ScanLineAnimation>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(seconds: 3),
+      vsync: this,
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        // Smooth sine-wave oscillation
+        final progress = sin(_controller.value * pi);
+        final opacity = (_controller.value < 0.1 || _controller.value > 0.9)
+            ? (_controller.value < 0.1
+                ? _controller.value / 0.1
+                : (1.0 - _controller.value) / 0.1)
+            : 1.0;
+
+        return Stack(
+          children: [
+            Positioned(
+              top: progress * 240,
+              left: 0,
+              right: 0,
+              child: Opacity(
+                opacity: opacity,
+                child: Container(
+                  height: 2,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.transparent,
+                        AppTheme.primary.withValues(alpha: 0.8),
+                        Colors.transparent,
+                      ],
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppTheme.primary.withValues(alpha: 0.5),
+                        blurRadius: 15,
+                        spreadRadius: 2,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

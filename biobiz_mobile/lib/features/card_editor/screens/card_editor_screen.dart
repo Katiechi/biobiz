@@ -1,8 +1,11 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../../app/theme.dart';
 import '../../../core/constants/color_presets.dart';
 import '../../../core/constants/social_platforms.dart';
 import '../../../core/services/storage_service.dart';
@@ -327,46 +330,100 @@ class _CardEditorScreenState extends ConsumerState<CardEditorScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return Scaffold(
       appBar: AppBar(
-        leading: TextButton(onPressed: _onCancel, child: const Text('Cancel')),
+        leading: TextButton(
+          onPressed: _onCancel,
+          child: Text('Cancel', style: GoogleFonts.inter(
+            color: cs.onSurfaceVariant, fontWeight: FontWeight.w500)),
+        ),
         title: Text(widget.cardId != null ? 'Edit Card' : 'New Card'),
         actions: [
           TextButton(
             onPressed: _isSaving ? null : _save,
             child: _isSaving
                 ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                : const Text('Save'),
+                : Text('Save', style: GoogleFonts.plusJakartaSans(
+                    color: cs.primary, fontWeight: FontWeight.w700)),
           ),
         ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : ListView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               children: [
                 _buildColorSection(),
-                const SizedBox(height: 12),
+                const SizedBox(height: 24),
                 _buildImagesSection(),
-                const SizedBox(height: 12),
+                const SizedBox(height: 24),
                 _buildPersonalDetailsSection(),
-                const SizedBox(height: 12),
+                const SizedBox(height: 24),
                 _buildContactFieldsSection(),
-                const SizedBox(height: 12),
+                const SizedBox(height: 24),
                 _buildSocialLinksSection(),
-                const SizedBox(height: 12),
+                const SizedBox(height: 24),
                 _buildQrCodeSection(),
-                const SizedBox(height: 80), // Space for preview button
+                const SizedBox(height: 100), // Space for preview button
               ],
             ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(16),
-        child: FilledButton.icon(
-          onPressed: _showPreview,
-          icon: const Icon(Icons.visibility),
-          label: const Text('Preview card'),
+      bottomNavigationBar: ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.8),
+          border: Border(
+            top: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.1)),
+          ),
+        ),
+        child: SafeArea(
+          child: HeritageGradientButton(
+            onPressed: _showPreview,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.visibility, color: Colors.white, size: 20),
+                const SizedBox(width: 10),
+                Text('Preview card', style: GoogleFonts.plusJakartaSans(
+                  color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+              ],
+            ),
+          ),
         ),
       ),
+        ),
+      ),
+    );
+  }
+
+  // ─── Section Header ───────────────────────────────────
+  Widget _buildSectionLabel(String title, IconData icon) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    return Row(
+      children: [
+        Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: cs.primaryContainer.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(icon, color: cs.primary, size: 18),
+        ),
+        const SizedBox(width: 10),
+        Text(
+          title.toUpperCase(),
+          style: tt.labelSmall?.copyWith(
+            color: cs.onSurfaceVariant,
+            letterSpacing: 1.5,
+          ),
+        ),
+      ],
     );
   }
 
@@ -374,123 +431,253 @@ class _CardEditorScreenState extends ConsumerState<CardEditorScreen> {
   // Story 3.1: Card Color Section
   // ─────────────────────────────────────────────
   Widget _buildColorSection() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.palette_outlined, color: Theme.of(context).colorScheme.primary),
-                const SizedBox(width: 8),
-                Text('Card Color', style: Theme.of(context).textTheme.titleMedium),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: List.generate(cardColorPresets.length, (index) {
-                final color = cardColorPresets[index];
-                final hexColor = '#${color.value.toRadixString(16).substring(2).toUpperCase()}';
-                final isSelected = _selectedColor == hexColor;
-                return GestureDetector(
-                  onTap: () => setState(() {
-                    _selectedColor = hexColor;
-                    _hasUnsavedChanges = true;
-                  }),
-                  child: Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: color,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: isSelected ? Theme.of(context).colorScheme.primary : Colors.grey.shade300,
-                        width: isSelected ? 3 : 1,
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionLabel('Card Color', Icons.palette_outlined),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: cs.surfaceContainerLowest,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              Wrap(
+                spacing: 14,
+                runSpacing: 14,
+                children: List.generate(cardColorPresets.length, (index) {
+                  final color = cardColorPresets[index];
+                  final hexColor = '#${color.value.toRadixString(16).substring(2).toUpperCase()}';
+                  final isSelected = _selectedColor == hexColor;
+                  return GestureDetector(
+                    onTap: () => setState(() {
+                      _selectedColor = hexColor;
+                      _hasUnsavedChanges = true;
+                    }),
+                    child: Transform.scale(
+                      scale: isSelected ? 1.1 : 1.0,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        width: 48,
+                        height: 48,
+                        padding: isSelected ? const EdgeInsets.all(3) : null,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: isSelected ? Border.all(color: cs.primary, width: 4) : null,
+                        ),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: color,
+                            shape: BoxShape.circle,
+                            boxShadow: isSelected
+                                ? [BoxShadow(color: color.withValues(alpha: 0.4), blurRadius: 8, offset: const Offset(0, 2))]
+                                : null,
+                          ),
+                          child: isSelected
+                              ? const Center(child: Icon(Icons.check, color: Colors.white, size: 20))
+                              : null,
+                        ),
                       ),
                     ),
-                    child: isSelected
-                        ? Icon(Icons.check, color: color.computeLuminance() > 0.5 ? Colors.black : Colors.white)
-                        : null,
-                  ),
-                );
-              }),
-            ),
-            const SizedBox(height: 12),
-            // Custom color
-            OutlinedButton.icon(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Custom color picker coming soon!')),
-                );
-              },
-              icon: const Icon(Icons.colorize, size: 18),
-              label: const Text('Custom color'),
-            ),
-          ],
+                  );
+                }),
+              ),
+              const SizedBox(height: 16),
+              // Active theme indicator
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: cs.surfaceContainerLow,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 24,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(4),
+                        gradient: LinearGradient(
+                          colors: [
+                            _parseColor(_selectedColor),
+                            AppTheme.gold,
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Text('Selected Theme', style: tt.bodySmall?.copyWith(fontWeight: FontWeight.w500)),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: cs.secondaryContainer,
+                        borderRadius: BorderRadius.circular(100),
+                      ),
+                      child: Text('ACTIVE', style: tt.labelSmall?.copyWith(
+                        color: cs.onSecondaryContainer, letterSpacing: 1.0)),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Custom color picker coming soon!')),
+                  );
+                },
+                icon: const Icon(Icons.colorize, size: 18),
+                label: const Text('Custom color'),
+              ),
+            ],
+          ),
         ),
-      ),
+      ],
     );
+  }
+
+  Color _parseColor(String hex) {
+    try {
+      return Color(int.parse(hex.replaceFirst('#', '0xFF')));
+    } catch (_) {
+      return Colors.black;
+    }
   }
 
   // ─────────────────────────────────────────────
   // Story 3.2: Images Section
   // ─────────────────────────────────────────────
   Widget _buildImagesSection() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    final cs = Theme.of(context).colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionLabel('Images & Layout', Icons.dashboard_outlined),
+        const SizedBox(height: 12),
+        Row(
           children: [
-            Row(
-              children: [
-                Icon(Icons.image_outlined, color: Theme.of(context).colorScheme.primary),
-                const SizedBox(width: 8),
-                Text('Images & Layout', style: Theme.of(context).textTheme.titleMedium),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _buildImagePicker('Logo', _logoUrl, Icons.business, () => _pickImage('logo')),
-                _buildImagePicker('Photo', _profileImageUrl, Icons.person, () => _pickImage('profile')),
-                _buildImagePicker('Cover', _coverImageUrl, Icons.photo, () => _pickImage('cover')),
-              ],
-            ),
+            Expanded(child: _buildImagePicker('Profile Photo', _profileImageUrl, Icons.add_a_photo_outlined, () => _pickImage('profile'), isCircle: true)),
+            const SizedBox(width: 12),
+            Expanded(child: _buildImagePicker('Company Logo', _logoUrl, Icons.branding_watermark_outlined, () => _pickImage('logo'), isCircle: false)),
           ],
         ),
+        const SizedBox(height: 12),
+        // Cover image
+        GestureDetector(
+          onTap: () => _pickImage('cover'),
+          child: Container(
+            height: 120,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: cs.surfaceContainerLowest,
+              borderRadius: BorderRadius.circular(16),
+              border: _coverImageUrl == null
+                  ? Border.all(color: cs.outlineVariant, width: 2, strokeAlign: BorderSide.strokeAlignInside)
+                  : null,
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: _coverImageUrl != null
+                ? Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Image.network(_coverImageUrl!, fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => _buildCoverPlaceholder()),
+                      Container(color: Colors.black.withValues(alpha: 0.2)),
+                      Center(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.9),
+                            borderRadius: BorderRadius.circular(100),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.edit, size: 14, color: cs.onSurface),
+                              const SizedBox(width: 6),
+                              Text('CHANGE COVER IMAGE',
+                                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                  letterSpacing: 1.2, color: cs.onSurface)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                : _buildCoverPlaceholder(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCoverPlaceholder() {
+    final cs = Theme.of(context).colorScheme;
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.panorama_outlined, size: 32, color: cs.onSurfaceVariant),
+          const SizedBox(height: 4),
+          Text('COVER IMAGE', style: Theme.of(context).textTheme.labelSmall?.copyWith(letterSpacing: 1.2)),
+        ],
       ),
     );
   }
 
-  Widget _buildImagePicker(String label, String? imageUrl, IconData fallbackIcon, VoidCallback onTap) {
-    return Column(
-      children: [
-        GestureDetector(
-          onTap: onTap,
-          child: Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Theme.of(context).colorScheme.outline),
-            ),
-            child: imageUrl != null
-                ? ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.network(imageUrl, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Icon(fallbackIcon, size: 32)),
-                  )
-                : Icon(fallbackIcon, size: 32, color: Theme.of(context).colorScheme.onSurfaceVariant),
+  Widget _buildImagePicker(String label, String? imageUrl, IconData fallbackIcon, VoidCallback onTap, {bool isCircle = false}) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: cs.surfaceContainerLowest,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: cs.outlineVariant,
+            width: 2,
+            strokeAlign: BorderSide.strokeAlignInside,
           ),
         ),
-        const SizedBox(height: 4),
-        Text(label, style: Theme.of(context).textTheme.bodySmall),
-      ],
+        child: Column(
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: cs.surfaceContainerHigh,
+                shape: isCircle ? BoxShape.circle : BoxShape.rectangle,
+                borderRadius: isCircle ? null : BorderRadius.circular(12),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: imageUrl != null
+                  ? Image.network(imageUrl, fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Icon(fallbackIcon, size: 24, color: cs.onSurfaceVariant))
+                  : Icon(fallbackIcon, size: 24, color: cs.onSurfaceVariant),
+            ),
+            const SizedBox(height: 10),
+            Text(label, style: tt.bodySmall?.copyWith(fontWeight: FontWeight.w700)),
+            Text('Tap to upload', style: tt.labelSmall?.copyWith(letterSpacing: 0.8)),
+          ],
+        ),
+      ),
     );
   }
 
@@ -552,93 +739,103 @@ class _CardEditorScreenState extends ConsumerState<CardEditorScreen> {
   // Story 3.3: Personal Details Section
   // ─────────────────────────────────────────────
   Widget _buildPersonalDetailsSection() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.person_outline, color: Theme.of(context).colorScheme.primary),
-                const SizedBox(width: 8),
-                Text('Personal Details', style: Theme.of(context).textTheme.titleMedium),
-              ],
-            ),
-            const SizedBox(height: 16),
-            // Card name
-            TextField(
-              controller: _cardNameController,
-              decoration: const InputDecoration(labelText: 'Card name', hintText: 'My Card'),
-            ),
-            const SizedBox(height: 12),
-            // Name fields
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _firstNameController,
-                    textCapitalization: TextCapitalization.words,
-                    decoration: const InputDecoration(labelText: 'First name *'),
+    final cs = Theme.of(context).colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionLabel('Personal Details', Icons.person_outline),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: cs.surfaceContainerLowest,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Card name
+              TextField(
+                controller: _cardNameController,
+                decoration: const InputDecoration(labelText: 'Card name', hintText: 'My Card'),
+              ),
+              const SizedBox(height: 16),
+              // Name fields
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _firstNameController,
+                      textCapitalization: TextCapitalization.words,
+                      decoration: const InputDecoration(labelText: 'First name *'),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextField(
-                    controller: _lastNameController,
-                    textCapitalization: TextCapitalization.words,
-                    decoration: const InputDecoration(labelText: 'Last name'),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextField(
+                      controller: _lastNameController,
+                      textCapitalization: TextCapitalization.words,
+                      decoration: const InputDecoration(labelText: 'Last name'),
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            // Additional name chips
-            Wrap(
-              spacing: 8,
-              children: [
-                _buildNameChip('Middle', _middleNameController),
-                _buildNameChip('Prefix', _prefixController),
-                _buildNameChip('Suffix', _suffixController),
-                _buildNameChip('Pronoun', _pronounController),
-                _buildNameChip('Preferred', _preferredNameController),
-              ],
-            ),
-            const SizedBox(height: 12),
-            // Professional
-            TextField(
-              controller: _jobTitleController,
-              textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(labelText: 'Job title'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _departmentController,
-              textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(labelText: 'Department'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _companyController,
-              textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(labelText: 'Company'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _websiteController,
-              keyboardType: TextInputType.url,
-              decoration: const InputDecoration(labelText: 'Company website', hintText: 'https://'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _headlineController,
-              maxLength: 200,
-              maxLines: 2,
-              decoration: const InputDecoration(labelText: 'Headline', hintText: 'Your personal tagline'),
-            ),
-          ],
+                ],
+              ),
+              const SizedBox(height: 12),
+              // Additional name chips
+              Wrap(
+                spacing: 8,
+                children: [
+                  _buildNameChip('Middle', _middleNameController),
+                  _buildNameChip('Prefix', _prefixController),
+                  _buildNameChip('Suffix', _suffixController),
+                  _buildNameChip('Pronoun', _pronounController),
+                  _buildNameChip('Preferred', _preferredNameController),
+                ],
+              ),
+              const SizedBox(height: 16),
+              // Professional
+              TextField(
+                controller: _jobTitleController,
+                textCapitalization: TextCapitalization.words,
+                decoration: const InputDecoration(labelText: 'Job title'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _departmentController,
+                textCapitalization: TextCapitalization.words,
+                decoration: const InputDecoration(labelText: 'Department'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _companyController,
+                textCapitalization: TextCapitalization.words,
+                decoration: const InputDecoration(labelText: 'Company'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _websiteController,
+                keyboardType: TextInputType.url,
+                decoration: const InputDecoration(labelText: 'Company website', hintText: 'https://'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _headlineController,
+                maxLength: 200,
+                maxLines: 2,
+                decoration: const InputDecoration(labelText: 'Headline', hintText: 'Your personal tagline'),
+              ),
+            ],
+          ),
         ),
-      ),
+      ],
     );
   }
 
@@ -685,58 +882,97 @@ class _CardEditorScreenState extends ConsumerState<CardEditorScreen> {
   // Story 3.4: Contact Fields Section
   // ─────────────────────────────────────────────
   Widget _buildContactFieldsSection() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.contact_phone_outlined, color: Theme.of(context).colorScheme.primary),
-                    const SizedBox(width: 8),
-                    Text('Contact Information', style: Theme.of(context).textTheme.titleMedium),
-                  ],
-                ),
-                TextButton.icon(
-                  onPressed: _addContactField,
-                  icon: const Icon(Icons.add, size: 18),
-                  label: const Text('Add'),
+            _buildSectionLabel('Contact Information', Icons.contact_page_outlined),
+            GestureDetector(
+              onTap: _addContactField,
+              child: Row(
+                children: [
+                  Icon(Icons.add, size: 16, color: cs.primary),
+                  const SizedBox(width: 4),
+                  Text('ADD FIELD', style: tt.labelSmall?.copyWith(
+                    color: cs.primary, letterSpacing: 1.2)),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        if (_contactFields.isEmpty)
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: cs.surfaceContainerLowest,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
                 ),
               ],
             ),
-            if (_contactFields.isEmpty) ...[
-              const SizedBox(height: 8),
-              Text(
+            child: Center(
+              child: Text(
                 'Add email, phone, address, and more',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
+                style: tt.bodySmall,
               ),
-            ] else ...[
-              const SizedBox(height: 8),
-              ReorderableListView(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                onReorder: (oldIndex, newIndex) {
-                  setState(() {
-                    if (newIndex > oldIndex) newIndex--;
-                    final item = _contactFields.removeAt(oldIndex);
-                    _contactFields.insert(newIndex, item);
-                    _hasUnsavedChanges = true;
-                  });
-                },
-                children: _contactFields.map((field) {
-                  return ListTile(
-                    key: ValueKey(field['id']),
-                    leading: const Icon(Icons.drag_handle),
-                    title: Text(field['value'] ?? ''),
-                    subtitle: Text(field['field_type'] ?? ''),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.close, size: 18),
+            ),
+          )
+        else
+          ...List.generate(_contactFields.length, (i) {
+            final field = _contactFields[i];
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: cs.surfaceContainerLowest,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.drag_indicator, color: cs.outlineVariant, size: 20),
+                    const SizedBox(width: 12),
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: cs.surfaceContainer,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(_getContactFieldIcon(field['field_type']), color: cs.primary, size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            (field['field_type'] ?? '').toString().toUpperCase(),
+                            style: tt.labelSmall?.copyWith(letterSpacing: 0.8),
+                          ),
+                          Text(field['value'] ?? '', style: tt.bodyMedium?.copyWith(fontWeight: FontWeight.w500)),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.delete_outline, size: 18, color: cs.outlineVariant),
                       onPressed: () {
                         setState(() {
                           _contactFields.remove(field);
@@ -744,14 +980,23 @@ class _CardEditorScreenState extends ConsumerState<CardEditorScreen> {
                         });
                       },
                     ),
-                  );
-                }).toList(),
+                  ],
+                ),
               ),
-            ],
-          ],
-        ),
-      ),
+            );
+          }),
+      ],
     );
+  }
+
+  IconData _getContactFieldIcon(String? type) {
+    switch (type) {
+      case 'email': return Icons.mail_outline;
+      case 'phone': return Icons.call_outlined;
+      case 'link': case 'company_website': return Icons.language;
+      case 'address': return Icons.location_on_outlined;
+      default: return Icons.info_outline;
+    }
   }
 
   void _addContactField() {
@@ -820,62 +1065,100 @@ class _CardEditorScreenState extends ConsumerState<CardEditorScreen> {
   // Story 3.5: Social Links Section
   // ─────────────────────────────────────────────
   Widget _buildSocialLinksSection() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.link, color: Theme.of(context).colorScheme.primary),
-                const SizedBox(width: 8),
-                Text('Social Links', style: Theme.of(context).textTheme.titleMedium),
-              ],
-            ),
-            const SizedBox(height: 8),
-            if (_socialLinks.isNotEmpty) ...[
-              ..._socialLinks.map((link) => ListTile(
-                    leading: const Icon(Icons.link),
-                    title: Text(link['platform'] ?? ''),
-                    subtitle: Text(link['url'] ?? ''),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.close, size: 18),
-                      onPressed: () {
-                        setState(() {
-                          _socialLinks.remove(link);
-                          _hasUnsavedChanges = true;
-                        });
-                      },
-                    ),
-                  )),
-              const Divider(),
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionLabel('Social Links', Icons.share_outlined),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: cs.surfaceContainerLowest,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
             ],
-            // Platform grid
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: socialPlatforms.map((platform) {
-                final hasLink = _socialLinks.any((l) => l['platform'] == platform.id);
-                return FilterChip(
-                  label: Text(platform.name),
-                  selected: hasLink,
-                  onSelected: (selected) {
-                    if (selected) {
-                      _addSocialLink(platform);
-                    } else {
-                      setState(() {
-                        _socialLinks.removeWhere((l) => l['platform'] == platform.id);
-                        _hasUnsavedChanges = true;
-                      });
-                    }
-                  },
-                );
-              }).toList(),
-            ),
-          ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (_socialLinks.isNotEmpty) ...[
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: _socialLinks.map((link) {
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: cs.primary,
+                        borderRadius: BorderRadius.circular(100),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            link['platform'] ?? '',
+                            style: tt.bodySmall?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _socialLinks.remove(link);
+                                _hasUnsavedChanges = true;
+                              });
+                            },
+                            child: const Icon(Icons.close, size: 16, color: Colors.white),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 12),
+              ],
+              // Platform grid
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: socialPlatforms.map((platform) {
+                  final hasLink = _socialLinks.any((l) => l['platform'] == platform.id);
+                  if (hasLink) return const SizedBox.shrink();
+                  return GestureDetector(
+                    onTap: () => _addSocialLink(platform),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(100),
+                        border: Border.all(color: cs.outlineVariant, width: 2),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.add, size: 14, color: cs.onSurfaceVariant),
+                          const SizedBox(width: 4),
+                          Text(platform.name, style: tt.bodySmall?.copyWith(
+                            fontWeight: FontWeight.w700, color: cs.onSurfaceVariant)),
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
         ),
-      ),
+      ],
     );
   }
 
@@ -933,38 +1216,49 @@ class _CardEditorScreenState extends ConsumerState<CardEditorScreen> {
   // Story 3.6: QR Code Section
   // ─────────────────────────────────────────────
   Widget _buildQrCodeSection() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.qr_code, color: Theme.of(context).colorScheme.primary),
-                const SizedBox(width: 8),
-                Text('QR Code', style: Theme.of(context).textTheme.titleMedium),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Center(
-              child: Container(
-                width: 120,
-                height: 120,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade300),
-                ),
-                child: const Center(
-                  child: Icon(Icons.qr_code_2, size: 80),
-                ),
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionLabel('QR Code', Icons.qr_code),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: cs.surfaceContainerLowest,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Center(
+            child: Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.06),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: const Center(
+                child: Icon(Icons.qr_code_2, size: 80),
               ),
             ),
-            const SizedBox(height: 16),
-          ],
+          ),
         ),
-      ),
+      ],
     );
   }
 }

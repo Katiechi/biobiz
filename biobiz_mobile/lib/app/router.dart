@@ -1,7 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'theme.dart';
 
 import '../features/onboarding/screens/landing_screen.dart';
 import '../features/onboarding/screens/quick_start_screen.dart';
@@ -330,7 +332,7 @@ class AppRouter {
   );
 }
 
-/// Main app shell with bottom navigation bar
+/// Main app shell with custom Atelier bottom navigation bar
 class MainShell extends StatelessWidget {
   final Widget child;
 
@@ -338,33 +340,68 @@ class MainShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final selectedIndex = _getSelectedIndex(context);
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       body: child,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _getSelectedIndex(context),
-        onDestinationSelected: (index) => _onDestinationSelected(context, index),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.badge_outlined),
-            selectedIcon: Icon(Icons.badge),
-            label: 'My Card',
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: isDark
+              ? AppTheme.cardDark.withValues(alpha: 0.95)
+              : Colors.white.withValues(alpha: 0.95),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 20,
+              offset: const Offset(0, -4),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _NavItem(
+                  icon: Icons.badge_outlined,
+                  activeIcon: Icons.badge,
+                  label: 'My Card',
+                  isSelected: selectedIndex == 0,
+                  onTap: () => _onDestinationSelected(context, 0),
+                  colorScheme: colorScheme,
+                ),
+                _NavItem(
+                  icon: Icons.qr_code_scanner_outlined,
+                  activeIcon: Icons.qr_code_scanner,
+                  label: 'Scan',
+                  isSelected: selectedIndex == 1,
+                  onTap: () => _onDestinationSelected(context, 1),
+                  colorScheme: colorScheme,
+                ),
+                _NavItem(
+                  icon: Icons.mic_none_outlined,
+                  activeIcon: Icons.mic,
+                  label: 'Notes',
+                  isSelected: selectedIndex == 2,
+                  onTap: () => _onDestinationSelected(context, 2),
+                  colorScheme: colorScheme,
+                ),
+                _NavItem(
+                  icon: Icons.people_outline,
+                  activeIcon: Icons.people,
+                  label: 'Contacts',
+                  isSelected: selectedIndex == 3,
+                  onTap: () => _onDestinationSelected(context, 3),
+                  colorScheme: colorScheme,
+                ),
+              ],
+            ),
           ),
-          NavigationDestination(
-            icon: Icon(Icons.qr_code_scanner_outlined),
-            selectedIcon: Icon(Icons.qr_code_scanner),
-            label: 'Scan',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.mic_none_outlined),
-            selectedIcon: Icon(Icons.mic),
-            label: 'AI Notetaker',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.people_outline),
-            selectedIcon: Icon(Icons.people),
-            label: 'Contacts',
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -396,5 +433,75 @@ class MainShell extends StatelessWidget {
       case 3:
         context.go('/contacts');
     }
+  }
+}
+
+/// Custom nav item with heritage gradient active indicator
+class _NavItem extends StatelessWidget {
+  final IconData icon;
+  final IconData activeIcon;
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+  final ColorScheme colorScheme;
+
+  const _NavItem({
+    required this.icon,
+    required this.activeIcon,
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+    required this.colorScheme,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOutCubic,
+        padding: EdgeInsets.symmetric(
+          horizontal: isSelected ? 16 : 12,
+          vertical: 8,
+        ),
+        decoration: BoxDecoration(
+          gradient: isSelected ? AppTheme.heritageGradient : null,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppTheme.primary.withValues(alpha: 0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isSelected ? activeIcon : icon,
+              size: isSelected ? 22 : 24,
+              color: isSelected ? Colors.white : AppTheme.textMuted,
+            ),
+            if (isSelected) ...[
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                  letterSpacing: 0.3,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
   }
 }

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
+
+import 'package:biobiz_mobile/app/theme.dart';
 
 /// Story 2.3: Optional profile picture with circular crop
 class OnboardingProfilePicScreen extends StatefulWidget {
@@ -78,108 +81,282 @@ class _OnboardingProfilePicScreenState
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
     return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
-        ),
-        title: const Text('Profile Picture'),
-      ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Progress (step 5)
-              LinearProgressIndicator(
-                value: 0.85,
-                backgroundColor:
-                    Theme.of(context).colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              const SizedBox(height: 8),
-              Text('Step 5 of 5',
-                  style: Theme.of(context).textTheme.bodySmall,
-                  textAlign: TextAlign.center),
-              const SizedBox(height: 32),
-
-              Text(
-                'Add a photo',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Help people recognize you',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-              ),
-              const SizedBox(height: 32),
-
-              // Profile picture preview
-              Center(
-                child: CircleAvatar(
-                  radius: 60,
-                  backgroundColor:
-                      Theme.of(context).colorScheme.surfaceContainerHighest,
-                  child: _selectedImage != null
-                      ? ClipOval(
-                          child: Image.network(
-                            _selectedImage!.path,
-                            width: 120,
-                            height: 120,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Icon(
-                              Icons.person,
-                              size: 60,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant,
-                            ),
-                          ),
-                        )
-                      : Icon(
-                          Icons.person,
-                          size: 60,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        child: Column(
+          children: [
+            // Top Navigation
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back),
+                        onPressed: () => context.pop(),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'BioBiz',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: colors.primaryContainer,
                         ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            // Content
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const SizedBox(height: 16),
+                    // Progress
+                    _buildProgressSection(context),
+                    const SizedBox(height: 48),
+
+                    // Editorial Header
+                    Text(
+                      'Add a photo',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 36,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.5,
+                        color: colors.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Help people recognize you',
+                      style: GoogleFonts.inter(
+                        fontSize: 18,
+                        color: colors.onSurfaceVariant,
+                      ),
+                    ),
+
+                    // Center Stage: Avatar
+                    Expanded(
+                      child: Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Avatar with heritage gradient badge
+                            Stack(
+                              children: [
+                                Container(
+                                  width: 192,
+                                  height: 192,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: colors.surfaceContainer,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(alpha: 0.08),
+                                        blurRadius: 20,
+                                        offset: const Offset(0, 8),
+                                      ),
+                                    ],
+                                  ),
+                                  child: _selectedImage != null
+                                      ? ClipOval(
+                                          child: Image.network(
+                                            _selectedImage!.path,
+                                            width: 192,
+                                            height: 192,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (_, __, ___) => Icon(
+                                              Icons.person,
+                                              size: 84,
+                                              color: colors.surfaceContainerHighest,
+                                            ),
+                                          ),
+                                        )
+                                      : Icon(
+                                          Icons.person,
+                                          size: 84,
+                                          color: colors.surfaceContainerHighest,
+                                        ),
+                                ),
+                                // Heritage gradient FAB badge
+                                Positioned(
+                                  bottom: 4,
+                                  right: 4,
+                                  child: Container(
+                                    width: 32,
+                                    height: 32,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      gradient: AppTheme.heritageGradient,
+                                      border: Border.all(
+                                        color: colors.surface,
+                                        width: 3,
+                                      ),
+                                    ),
+                                    child: const Icon(
+                                      Icons.add_a_photo,
+                                      color: Colors.white,
+                                      size: 16,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 48),
+
+                            // Action Buttons
+                            _buildActionButton(
+                              context,
+                              icon: Icons.photo_camera,
+                              label: 'Take a photo',
+                              onTap: _pickFromCamera,
+                            ),
+                            const SizedBox(height: 16),
+                            _buildActionButton(
+                              context,
+                              icon: Icons.photo_library,
+                              label: 'Choose from gallery',
+                              onTap: _pickFromGallery,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    // Bottom Actions
+                    HeritageGradientButton(
+                      onPressed: _next,
+                      height: 56,
+                      child: Text(
+                        'Preview my card',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                          letterSpacing: -0.2,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Center(
+                      child: TextButton(
+                        onPressed: () {
+                          _skipped = true;
+                          _next();
+                        },
+                        child: Text(
+                          'NOT NOW',
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: colors.primary,
+                            letterSpacing: 0.8,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
                 ),
               ),
-              const SizedBox(height: 24),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-              OutlinedButton.icon(
-                onPressed: _pickFromCamera,
-                icon: const Icon(Icons.camera_alt_outlined),
-                label: const Text('Take a photo'),
-              ),
-              const SizedBox(height: 12),
-              OutlinedButton.icon(
-                onPressed: _pickFromGallery,
-                icon: const Icon(Icons.photo_library_outlined),
-                label: const Text('Choose from gallery'),
-              ),
+  Widget _buildProgressSection(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
 
-              const Spacer(),
-
-              // Not now button
-              TextButton(
-                onPressed: () {
-                  _skipped = true;
-                  _next();
-                },
-                child: const Text('Not now'),
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'STEP 5 OF 5',
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: colors.onSurfaceVariant,
+                letterSpacing: 0.8,
               ),
-              const SizedBox(height: 8),
-
-              FilledButton(
-                onPressed: _next,
-                child: const Text('Preview my card'),
+            ),
+            Text(
+              '85%',
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: colors.primary,
+                fontWeight: FontWeight.w700,
               ),
-              const SizedBox(height: 16),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: SizedBox(
+            height: 4,
+            child: Container(
+              decoration: BoxDecoration(
+                color: colors.surfaceContainer,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: FractionallySizedBox(
+                alignment: Alignment.centerLeft,
+                widthFactor: 0.85,
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: AppTheme.heritageGradient,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionButton(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    final colors = Theme.of(context).colorScheme;
+
+    return Material(
+      color: colors.surfaceContainerLow,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          height: 56,
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Row(
+            children: [
+              Icon(icon, color: colors.primary, size: 24),
+              const SizedBox(width: 16),
+              Text(
+                label,
+                style: GoogleFonts.inter(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: colors.onSurface,
+                ),
+              ),
             ],
           ),
         ),

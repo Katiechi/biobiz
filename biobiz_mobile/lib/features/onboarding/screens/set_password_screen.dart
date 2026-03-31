@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../../app/theme.dart';
 import '../../../core/providers/auth_provider.dart';
 
 /// Set Password Screen - Final step for email registration
@@ -93,7 +95,8 @@ class _OnboardingSetPasswordScreenState extends ConsumerState<OnboardingSetPassw
                 Text(
                   'Set your password',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w800,
+                        fontFamily: GoogleFonts.plusJakartaSans().fontFamily,
                       ),
                 ),
                 const SizedBox(height: 8),
@@ -181,15 +184,29 @@ class _OnboardingSetPasswordScreenState extends ConsumerState<OnboardingSetPassw
                 const SizedBox(height: 32),
 
                 // Create account button
-                FilledButton(
+                HeritageGradientButton(
                   onPressed: _isLoading ? null : _createAccount,
                   child: _isLoading
                       ? const SizedBox(
                           height: 20,
                           width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                         )
-                      : const Text('Create account'),
+                      : Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.person_add, color: Colors.white),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Create account',
+                              style: GoogleFonts.plusJakartaSans(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
+                        ),
                 ),
                 const SizedBox(height: 12),
 

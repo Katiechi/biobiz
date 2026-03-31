@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 /// Magic Link Sent Screen - Shows confirmation after sending magic link
 class OnboardingMagicLinkSentScreen extends StatelessWidget {
@@ -20,25 +21,35 @@ class OnboardingMagicLinkSentScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Spacer(),
-              
+
               // Success icon
-              Icon(
-                Icons.mark_email_read_outlined,
-                size: 80,
-                color: Theme.of(context).colorScheme.primary,
+              Center(
+                child: Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.mark_email_read_outlined,
+                    size: 80,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
               ),
               const SizedBox(height: 32),
-              
+
               // Title
               Text(
                 'Check your email',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w800,
+                      fontFamily: GoogleFonts.plusJakartaSans().fontFamily,
                     ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
-              
+
               // Instructions
               Text(
                 'We\'ve sent a magic link to:',
@@ -56,7 +67,7 @@ class OnboardingMagicLinkSentScreen extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
-              
+
               Text(
                 'Click the link in the email to sign in instantly. No password needed!',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -64,9 +75,9 @@ class OnboardingMagicLinkSentScreen extends StatelessWidget {
                     ),
                 textAlign: TextAlign.center,
               ),
-              
+
               const Spacer(),
-              
+
               // Tips
               Container(
                 padding: const EdgeInsets.all(16),
@@ -90,9 +101,9 @@ class OnboardingMagicLinkSentScreen extends StatelessWidget {
                   ],
                 ),
               ),
-              
+
               const SizedBox(height: 32),
-              
+
               // Continue as guest button
               OutlinedButton(
                 onPressed: () {
@@ -101,13 +112,13 @@ class OnboardingMagicLinkSentScreen extends StatelessWidget {
                 child: const Text('Preview my card while I wait'),
               ),
               const SizedBox(height: 12),
-              
+
               // Back button
               TextButton(
                 onPressed: () => context.pop(),
                 child: const Text('Use password instead'),
               ),
-              
+
               const SizedBox(height: 16),
             ],
           ),
@@ -115,7 +126,7 @@ class OnboardingMagicLinkSentScreen extends StatelessWidget {
       ),
     );
   }
-  
+
   Widget _buildTip(BuildContext context, String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),

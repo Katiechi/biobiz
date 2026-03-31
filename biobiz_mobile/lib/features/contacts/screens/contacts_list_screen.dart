@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:biobiz_mobile/app/theme.dart';
 import 'contact_detail_screen.dart';
 
 /// Story 7.1: Searchable contacts list
@@ -18,6 +20,30 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
   List<Map<String, dynamic>> _contacts = [];
   List<Map<String, dynamic>> _filteredContacts = [];
   bool _isLoading = true;
+
+  // Rotating gradient palette for avatar circles
+  static const _avatarGradients = [
+    LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [AppTheme.primary, AppTheme.primaryContainer],
+    ),
+    LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [Color(0xFF424242), Color(0xFF212121)],
+    ),
+    LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [AppTheme.secondary, AppTheme.secondaryContainer],
+    ),
+    LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [AppTheme.primaryContainer, Color(0xFFB71C1C)],
+    ),
+  ];
 
   @override
   void initState() {
@@ -75,6 +101,9 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+
     return Scaffold(
       appBar: AppBar(title: const Text('Contacts')),
       body: _isLoading
@@ -84,12 +113,15 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
                 // Search bar
                 if (_contacts.isNotEmpty)
                   Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
                     child: TextField(
                       controller: _searchController,
                       decoration: InputDecoration(
-                        hintText: 'Search contacts...',
-                        prefixIcon: const Icon(Icons.search),
+                        hintText: 'Search your network...',
+                        prefixIcon: Icon(
+                          Icons.search,
+                          color: cs.onSurfaceVariant.withValues(alpha: 0.6),
+                        ),
                         suffixIcon: _searchController.text.isNotEmpty
                             ? IconButton(
                                 icon: const Icon(Icons.clear),
@@ -99,7 +131,75 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
                                 },
                               )
                             : null,
+                        filled: true,
+                        fillColor: cs.surfaceContainerHighest,
+                        border: UnderlineInputBorder(
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(12),
+                          ),
+                          borderSide: BorderSide(
+                            color: cs.outlineVariant.withValues(alpha: 0.2),
+                            width: 2,
+                          ),
+                        ),
+                        enabledBorder: UnderlineInputBorder(
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(12),
+                          ),
+                          borderSide: BorderSide(
+                            color: cs.outlineVariant.withValues(alpha: 0.2),
+                            width: 2,
+                          ),
+                        ),
+                        focusedBorder: UnderlineInputBorder(
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(12),
+                          ),
+                          borderSide: BorderSide(color: cs.primary, width: 2),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 16,
+                        ),
+                        hintStyle: GoogleFonts.inter(
+                          color: cs.onSurfaceVariant.withValues(alpha: 0.5),
+                          fontSize: 14,
+                        ),
                       ),
+                    ),
+                  ),
+
+                // Section header: "Directory" with count badge
+                if (_contacts.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 12),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Directory',
+                          style: tt.headlineMedium,
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: cs.primary.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(100),
+                          ),
+                          child: Text(
+                            '${_filteredContacts.length} SAVED',
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.8,
+                              color: cs.primary,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
 
@@ -110,24 +210,31 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
                       : RefreshIndicator(
                           onRefresh: _loadContacts,
                           child: ListView.builder(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 4,
+                            ),
                             itemCount: _filteredContacts.length,
                             itemBuilder: (context, index) {
                               final contact = _filteredContacts[index];
-                              return _buildContactTile(contact);
+                              return _buildContactTile(contact, index);
                             },
                           ),
                         ),
                 ),
               ],
             ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: GoldFab(
         onPressed: _addManualContact,
-        child: const Icon(Icons.person_add),
+        icon: Icons.person_add,
+        tooltip: 'Add contact',
       ),
     );
   }
 
   Widget _buildEmptyState() {
+    final cs = Theme.of(context).colorScheme;
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -136,23 +243,27 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
           children: [
             Icon(
               Icons.people_outline,
-              size: 80,
-              color: Theme.of(context).colorScheme.primary,
+              size: 96,
+              color: cs.onSurfaceVariant.withValues(alpha: 0.3),
             ),
             const SizedBox(height: 24),
             Text(
               'No contacts yet',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.3,
+                color: cs.onSurface,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               'When you share your card and someone shares\ntheir details back, they\'ll appear here.',
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                color: cs.onSurfaceVariant,
+              ),
             ),
             const SizedBox(height: 24),
             FilledButton.icon(
@@ -166,7 +277,8 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
     );
   }
 
-  Widget _buildContactTile(Map<String, dynamic> contact) {
+  Widget _buildContactTile(Map<String, dynamic> contact, int index) {
+    final cs = Theme.of(context).colorScheme;
     final firstName = contact['first_name'] ?? '';
     final lastName = contact['last_name'] ?? '';
     final name = '$firstName $lastName'.trim();
@@ -175,44 +287,115 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
     final email = contact['email'] ?? '';
     final source = contact['source'] ?? 'manual';
 
-    return ListTile(
-      leading: CircleAvatar(
-        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-        child: Text(
-          name.isNotEmpty ? name[0].toUpperCase() : '?',
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.onPrimaryContainer,
-            fontWeight: FontWeight.bold,
+    final initials = _getInitials(firstName, lastName);
+    final gradient = _avatarGradients[index % _avatarGradients.length];
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Material(
+        color: cs.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(16),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ContactDetailScreen(contact: contact),
+              ),
+            ).then((_) => _loadContacts());
+          },
+          splashColor: cs.primary.withValues(alpha: 0.05),
+          highlightColor: cs.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                // Gradient avatar
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: gradient,
+                  ),
+                  child: Center(
+                    child: Text(
+                      initials,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                // Name and subtitle
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        name.isNotEmpty ? name : 'Unknown',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                          color: cs.onSurface,
+                        ),
+                      ),
+                      if (jobTitle.isNotEmpty || company.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          [jobTitle, company]
+                              .where((s) => s.isNotEmpty)
+                              .join(' \u2022 '),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: cs.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Source icon + email indicator
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    _buildSourceBadge(source),
+                    if (email.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Icon(
+                        Icons.email_outlined,
+                        size: 14,
+                        color: cs.onSurfaceVariant.withValues(alpha: 0.4),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
-      title: Text(name.isNotEmpty ? name : 'Unknown'),
-      subtitle: Text(
-        [jobTitle, company].where((s) => s.isNotEmpty).join(' · '),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (email.isNotEmpty)
-            Icon(Icons.email_outlined, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
-          const SizedBox(width: 4),
-          _buildSourceBadge(source),
-        ],
-      ),
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => ContactDetailScreen(contact: contact),
-          ),
-        ).then((_) => _loadContacts());
-      },
     );
   }
 
+  String _getInitials(String firstName, String lastName) {
+    final f = firstName.isNotEmpty ? firstName[0].toUpperCase() : '';
+    final l = lastName.isNotEmpty ? lastName[0].toUpperCase() : '';
+    if (f.isEmpty && l.isEmpty) return '?';
+    return '$f$l';
+  }
+
   Widget _buildSourceBadge(String source) {
+    final cs = Theme.of(context).colorScheme;
     IconData icon;
     switch (source) {
       case 'scan':
@@ -222,7 +405,19 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
       default:
         icon = Icons.person;
     }
-    return Icon(icon, size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant);
+
+    return Container(
+      padding: const EdgeInsets.all(6),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Icon(
+        icon,
+        size: 16,
+        color: cs.secondary,
+      ),
+    );
   }
 
   void _addManualContact() {

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../../app/theme.dart';
 
 /// Email Start Screen - For users who prefer email/password
 class OnboardingEmailStartScreen extends StatefulWidget {
@@ -80,7 +82,8 @@ class _OnboardingEmailStartScreenState extends State<OnboardingEmailStartScreen>
                 Text(
                   'Create your account',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w800,
+                        fontFamily: GoogleFonts.plusJakartaSans().fontFamily,
                       ),
                 ),
                 const SizedBox(height: 8),
@@ -223,9 +226,23 @@ class _OnboardingEmailStartScreenState extends State<OnboardingEmailStartScreen>
                 const SizedBox(height: 32),
 
                 // Continue button
-                FilledButton(
+                HeritageGradientButton(
                   onPressed: _continueToPreview,
-                  child: const Text('Continue'),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.arrow_forward, color: Colors.white),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Continue',
+                        style: GoogleFonts.plusJakartaSans(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 16),
               ],

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../../core/services/guest_mode_service.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/providers/auth_provider.dart';
@@ -85,16 +86,26 @@ class _SaveGuestCardScreenState extends ConsumerState<SaveGuestCardScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Spacer(),
-              Icon(
-                Icons.cloud_upload_outlined,
-                size: 80,
-                color: Theme.of(context).colorScheme.primary,
+              Center(
+                child: Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.cloud_upload_outlined,
+                    size: 80,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
               ),
               const SizedBox(height: 32),
               Text(
                 'Save your card',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w800,
+                      fontFamily: GoogleFonts.plusJakartaSans().fontFamily,
                     ),
                 textAlign: TextAlign.center,
               ),
