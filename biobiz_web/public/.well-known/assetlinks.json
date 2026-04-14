@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.biobiz.biobiz_mobile",
+      "sha256_cert_fingerprints": [
+        "21:1F:B3:27:D2:EA:FC:49:70:5A:FE:25:7F:C1:CE:CE:71:5D:43:D8:AE:7C:2F:2A:E7:F5:57:CA:84:3F:58:66"
+      ]
+    }
+  }
+]
