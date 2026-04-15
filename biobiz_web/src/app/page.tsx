@@ -138,12 +138,22 @@ export default function Home() {
               Download BioBiz now. Free forever, no hidden costs.
             </p>
             <a
-              href="https://github.com/Katiechi/biobiz/releases/latest/download/app-release.apk"
-              download
+              href="https://play.google.com/store/apps/details?id=com.biobiz.biobiz_mobile"
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-block px-8 py-4 bg-white text-[#C62828] rounded-xl font-semibold hover:bg-red-50 transition-colors text-lg"
             >
-              Download APK (Android)
+              Get it on Google Play
             </a>
+            <div className="mt-4">
+              <a
+                href="https://github.com/Katiechi/biobiz/releases/latest/download/app-release.apk"
+                download
+                className="text-red-200 text-sm hover:text-white transition-colors underline"
+              >
+                Or download APK directly
+              </a>
+            </div>
             <p className="text-red-200 text-sm mt-4">
               iOS coming soon
             </p>

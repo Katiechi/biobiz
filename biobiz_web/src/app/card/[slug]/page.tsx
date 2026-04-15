@@ -155,9 +155,10 @@ export default async function CardPage({ params }: Props) {
 
           {/* Action Buttons */}
           <div className="mt-6 space-y-3">
-            {/* Open in App — tries deep link */}
+            {/* Open in App — Android Intent URL with Play Store fallback.
+                If the app is installed, opens directly. If not, redirects to Play Store. */}
             <a
-              href={`io.supabase.biobiz://card/${slug}`}
+              href={`intent://biobiz.app/card/${slug}#Intent;scheme=https;package=com.biobiz.biobiz_mobile;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.biobiz.biobiz_mobile;end`}
               className="block w-full py-3 bg-[#D4A537] text-gray-900 rounded-xl font-semibold hover:bg-[#E8C96A] transition-colors text-center text-sm"
             >
               Open in BioBiz App
@@ -184,21 +185,21 @@ export default async function CardPage({ params }: Props) {
           <p className="text-gray-400 text-xs mb-4 leading-relaxed">
             Get BioBiz free — create your own digital business card and share it instantly
           </p>
-          <div className="flex gap-3">
-            <a
-              href="https://github.com/Katiechi/biobiz/releases/latest/download/app-release.apk"
-              download
-              className="flex-1 py-2.5 bg-[#C62828] hover:bg-[#AD1F1F] text-white rounded-xl font-semibold transition-colors text-sm text-center"
-            >
-              Download APK
-            </a>
-            <a
-              href="/"
-              className="flex-1 py-2.5 bg-white/10 hover:bg-white/15 text-white rounded-xl font-semibold transition-colors text-sm text-center"
-            >
-              Learn More
-            </a>
-          </div>
+          <a
+            href="https://play.google.com/store/apps/details?id=com.biobiz.biobiz_mobile"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block w-full py-3 bg-[#C62828] hover:bg-[#AD1F1F] text-white rounded-xl font-semibold transition-colors text-sm text-center mb-2"
+          >
+            Get it on Google Play
+          </a>
+          <a
+            href="https://github.com/Katiechi/biobiz/releases/latest/download/app-release.apk"
+            download
+            className="block w-full py-2 text-gray-400 hover:text-white text-xs transition-colors"
+          >
+            Or download APK directly
+          </a>
         </div>
       </div>
     </div>
